@@ -70,6 +70,7 @@ def apply_extract_to_profile(
     profile: dict[str, Any],
     extract:  dict[str, Any],
     alpha:    float = MASTERY_ALPHA,
+    allow_mastery_decrease: bool = True,
 ) -> tuple[dict[str, Any], dict[str, str]]:
     """
     Apply validated extractor output to a profile. Returns:
@@ -77,6 +78,12 @@ def apply_extract_to_profile(
       - deltas           (dict concept_id → "+X.XX" mastery delta strings for logging)
 
     Side-effect: profile["updated_at"] is refreshed.
+
+    Parameters
+    ----------
+    allow_mastery_decrease : when False, mastery is only ever increased (never
+        reduced). Use False for uninstructed chat turns so that asking a question
+        about a topic never penalises a learner who already knows it.
     """
     now = _now_iso()
     outcome = extract.get("outcome", {})
@@ -105,6 +112,10 @@ def apply_extract_to_profile(
 
         old_mastery = entry["mastery"]
         new_mastery = update_mastery(old_mastery, outcome_label, alpha)
+
+        # Honour the no-decrease guard (used for uninstructed chat turns)
+        if not allow_mastery_decrease and new_mastery < old_mastery:
+            new_mastery = old_mastery
 
         entry["attempts"]        += 1
         entry["correct_attempts"] += (1 if outcome_label == "correct" else 0)

@@ -326,6 +326,33 @@
       margin: auto; padding: 28px 30px 24px;
       box-shadow: 0 24px 60px rgba(0,0,0,0.3); position: relative;
     }
+    /* ── Profile / Groups ──────────────────────────────────────────── */
+    .group-card {
+      background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;
+      padding:16px 18px;margin-bottom:14px;
+    }
+    .group-card.active-group {
+      border-color:#4f46e5;background:#eef2ff;
+    }
+    .group-card h3 { margin:0 0 8px;font-size:0.97rem;color:#1f2937;display:flex;align-items:center;gap:8px }
+    .group-doc-chip {
+      display:inline-flex;align-items:center;gap:5px;
+      background:#fff;border:1px solid #d1d5db;border-radius:6px;
+      padding:4px 10px;font-size:0.78rem;color:#374151;margin:3px;
+    }
+    .group-doc-chip.loaded { border-color:#22c55e;color:#15803d;background:#f0fdf4; }
+    .group-upload-btn {
+      padding:5px 13px;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0;
+      border-radius:6px;font-size:0.8rem;cursor:pointer;font-weight:600;
+    }
+    .group-upload-btn:disabled { opacity:0.5;cursor:default; }
+    .group-activate-btn {
+      padding:5px 13px;background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;
+      border-radius:6px;font-size:0.8rem;cursor:pointer;font-weight:600;
+    }
+    .group-activate-btn.deactivate {
+      background:#fef2f2;color:#dc2626;border-color:#fecaca;
+    }
   </style>
 </head>
 <body>
@@ -343,6 +370,7 @@
     <button class="tab-btn"        data-tab="chat">💬 Tutor Chat</button>
     <button class="tab-btn"        data-tab="mastery">📊 Mastery</button>
     <button class="tab-btn"        data-tab="graph">🧠 Knowledge Graph</button>
+    <button class="tab-btn"        data-tab="profile">👤 My Profile</button>
   </div>
 
   <!-- ── PDF tab ── -->
@@ -391,6 +419,50 @@
     </div>
   </div>
 
+  <!-- Group Study Plan section (shown when a group is active) -->
+  <div id="groupStudyPlanSection" class="card" style="display:none;margin-top:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+      <h2 style="margin:0">📋 Group Plan: <span id="groupStudyGroupName" style="color:#4f46e5"></span></h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button id="generateGroupPlanBtn" onclick="generateGroupStudyPlan()"
+          style="padding:6px 14px;background:#4f46e5;color:#fff;border:none;border-radius:7px;font-size:0.83rem;cursor:pointer;font-weight:600">
+          ✨ Generate Plan
+        </button>
+        <button onclick="deactivateGroup()"
+          style="padding:5px 13px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;font-size:0.8rem;cursor:pointer;font-weight:600">
+          Deactivate
+        </button>
+      </div>
+    </div>
+
+    <!-- Stale-plan warning -->
+    <div id="groupPlanStaleBanner" style="display:none;background:#fef9c3;border:1px solid #fde047;border-radius:7px;padding:9px 14px;margin-bottom:12px;font-size:0.84rem;color:#854d0e;align-items:center;gap:8px">
+      <span>⚠️</span>
+      <span>New PDFs added since this plan was generated — <strong>regenerate</strong> to include them.</span>
+      <button onclick="generateGroupStudyPlan()" style="margin-left:auto;padding:4px 11px;background:#854d0e;color:#fff;border:none;border-radius:5px;font-size:0.78rem;cursor:pointer;font-weight:600">Update Now</button>
+    </div>
+
+    <div id="groupPlanLoading" style="display:none;color:#6b7280;font-size:0.85rem;margin:8px 0">⏳ Generating combined plan…</div>
+
+    <!-- Saved plan content -->
+    <div id="groupPlanContent" style="display:none;margin-bottom:14px">
+      <div id="groupPlanMd"></div>
+      <a id="groupPlanDownload" download="group_study_plan.md"
+        style="display:inline-block;padding:6px 14px;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0;border-radius:6px;font-size:0.82rem;font-weight:600;text-decoration:none;margin-top:10px">
+        ⬇ Download plan
+      </a>
+    </div>
+    <div id="groupPlanEmpty" style="color:#9ca3af;font-size:0.84rem;margin-bottom:10px">
+      Click <strong>Generate Plan</strong> to create a unified study plan for all PDFs in this group.
+    </div>
+
+    <!-- PDFs in group -->
+    <div style="border-top:1px solid #f1f5f9;padding-top:12px;margin-top:4px">
+      <div style="font-size:0.72rem;font-weight:700;color:#6b7280;letter-spacing:0.04em;margin-bottom:8px">PDFs IN GROUP</div>
+      <div id="groupStudyDocList"></div>
+    </div>
+  </div>
+
   </div><!-- /tab-pdf -->
 
   <!-- ── Chat tab ── -->
@@ -400,6 +472,14 @@
       <!-- chat main column -->
       <div id="chatMain">
         <div class="card" style="padding:20px">
+
+        <!-- Group context banner (shown when a group is active) -->
+        <div id="groupBanner" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:0.84rem;color:#15803d;align-items:center;gap:8px">
+          <span>📁</span>
+          <span>Group active: <strong id="groupBannerName"></strong></span>
+          <span id="groupDocCount" style="font-size:0.75rem;color:#6b7280;margin-left:4px"></span>
+          <button onclick="deactivateGroup()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem" title="Remove group context">✕</button>
+        </div>
 
         <!-- PDF context banner (shown when a doc is loaded) -->
         <div id="pdfBanner" style="display:none;background:#f0f0ff;border:1px solid #c7c7ff;border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:0.84rem;color:#4338ca;align-items:center;gap:8px">
@@ -518,6 +598,7 @@
           <button onclick="openQuiz()" style="padding:6px 14px;background:#4f46e5;color:#fff;border:none;border-radius:7px;font-size:0.83rem;cursor:pointer;font-weight:600">📝 Quiz Me</button>
         </div>
       </div>
+      <div id="masteryContextLabel" style="display:none;font-size:0.8rem;color:#4338ca;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;padding:5px 10px;margin-bottom:12px"></div>
 
       <div id="masteryEmpty" style="text-align:center;padding:56px 24px;color:#aaa">
         <div style="font-size:2.5rem">📚</div>
@@ -547,6 +628,31 @@
       </div>
     </div>
   </div><!-- /tab-mastery -->
+
+  <!-- ── Profile tab ── -->
+  <div class="tab-panel" id="tab-profile">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+        <h2 style="margin:0">👤 My Profile</h2>
+        <code id="profileUserBadge" style="font-size:0.75rem;color:#9ca3af;background:#f1f5f9;padding:3px 8px;border-radius:5px"></code>
+      </div>
+
+      <!-- Create group form -->
+      <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;align-items:center">
+        <input id="newGroupName" placeholder="New group name…"
+          style="flex:1;min-width:180px;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:0.88rem" />
+        <button onclick="createGroup()"
+          style="padding:9px 20px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:0.88rem;cursor:pointer;font-weight:600;white-space:nowrap">+ Create Group</button>
+      </div>
+      <div id="profileCreateStatus" style="font-size:0.82rem;margin-top:-16px;margin-bottom:14px;min-height:16px"></div>
+
+      <div id="profileGroupsEmpty" style="text-align:center;padding:48px 24px;color:#aaa">
+        <div style="font-size:2.4rem">📁</div>
+        <p style="margin-top:10px">No groups yet.<br>Create one above, then upload PDFs into it.</p>
+      </div>
+      <div id="profileGroupsList"></div>
+    </div>
+  </div><!-- /tab-profile -->
 
 <!-- ── Quiz Modal ── -->
 <div id="quizModal">
@@ -602,6 +708,8 @@
       document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
       if (btn.dataset.tab === "graph")   refreshKnowledgeGraph();
       if (btn.dataset.tab === "mastery") updateMasteryTab(_currentMasteryAllConcepts, docConceptIds);
+      if (btn.dataset.tab === "profile") loadProfile();
+      if (btn.dataset.tab === "pdf")     _renderGroupStudySection(_activeGroupData);
     });
   });
 
@@ -744,6 +852,8 @@
   let docConceptIds  = [];       // concept slugs seeded from the PDF study plan
   let _currentMasteryAllConcepts = [];  // latest all_concepts from memory_preview
   let _currentMasteryRows = [];  // flattened rows used by _renderMasteryRows
+  let activeGroupId   = null;   // set when user activates a group from profile
+  let activeGroupName = null;
 
   // ── Session controls ──────────────────────────────────────────────────────
   const createSessionBtn = document.getElementById("createSessionBtn");
@@ -863,15 +973,29 @@
   function updateMemory(preview) {
     if (!preview) return;
 
-    // Concepts
-    const weak = preview.weak_concepts || [];
-    if (weak.length) {
-      memConcepts.innerHTML = weak.map(c => `
-        <div class="mastery-item">
-          <span class="mastery-name" title="${c.concept_id}">${c.concept_id.replace(/_/g,' ')}</span>
-          <div class="mastery-bar-wrap"><div class="mastery-bar" style="width:${(c.mastery*100).toFixed(0)}%"></div></div>
-          <span class="mastery-val">${(c.mastery*100).toFixed(0)}%</span>
-        </div>`).join("");
+    // Build a lookup from concept_id → data for the full list
+    const allConceptsMap = {};
+    for (const c of (preview.all_concepts || [])) allConceptsMap[c.concept_id] = c;
+
+    // If a PDF or group is active, show ALL seeded concept IDs with their current mastery.
+    // Otherwise fall back to showing only weak concepts (< 50%) to reduce noise.
+    const displayConcepts = docConceptIds.length
+      ? docConceptIds.map(cid => allConceptsMap[cid] || { concept_id: cid, mastery: 0, attempts: 0 })
+      : (preview.weak_concepts || []);
+
+    if (displayConcepts.length) {
+      memConcepts.innerHTML = displayConcepts.map(c => {
+        const pct = Math.round((c.mastery || 0) * 100);
+        const clr = pct >= 60 ? "#22c55e" : pct >= 30 ? "#f59e0b" : pct > 0 ? "#ef4444" : "#d1d5db";
+        return `
+          <div class="mastery-item">
+            <span class="mastery-name" title="${c.concept_id}">${c.concept_id.replace(/_/g,' ')}</span>
+            <div class="mastery-bar-wrap">
+              <div class="mastery-bar" style="width:${pct}%;background:${clr}"></div>
+            </div>
+            <span class="mastery-val" style="color:${clr}">${pct}%</span>
+          </div>`;
+      }).join("");
     } else {
       memConcepts.innerHTML = '<span style="color:#bbb;font-size:0.75rem">none yet</span>';
     }
@@ -924,7 +1048,8 @@
     const payload = { message: text };
     if (learnerId)      payload.learner_id    = learnerId;
     if (sessionId)      payload.session_id    = sessionId;
-    if (currentDocId)   payload.doc_id        = currentDocId;
+    if (activeGroupId)  payload.group_id      = activeGroupId;
+    else if (currentDocId) payload.doc_id     = currentDocId;
     const outcome = outcomeSelect.value;
     if (outcome)    payload.outcome_signal = outcome;
     // reset selector for next turn
@@ -983,18 +1108,30 @@
       document.getElementById("graphContainer").style.display = "none";
       return;
     }
+    // Give the browser two frames to paint the newly-visible tab panel so
+    // clientWidth / clientHeight are non-zero when D3 reads them.
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     try {
       const res  = await fetch("/api/knowledge-graph/" + learnerId);
       const data = await res.json();
-      _renderGraphFromPreview(data);
+      // Seed unvisited PDF/group concepts as ghost nodes so the graph isn't empty
+      // before the user has chatted.
+      const seeds = activeGroupId ? docConceptIds : (currentDocId ? docConceptIds : []);
+      _renderGraphFromPreview(data, seeds);
     } catch(e) {
       console.warn("Graph fetch failed", e);
     }
   }
 
-  function _renderGraphFromPreview(data) {
-    const nodes = data.nodes || [];
+  function _renderGraphFromPreview(data, seedCids = []) {
+    const profileNodes = data.nodes || [];
     const links = data.links || [];
+    // Merge seed concepts (from PDF/group) as ghost/unvisited nodes
+    const existingIds = new Set(profileNodes.map(n => n.id));
+    const seedNodes   = (seedCids || [])
+      .filter(cid => !existingIds.has(cid))
+      .map(cid => ({ id: cid, mastery: 0, attempts: 0, last_outcome: "", has_misconception: false }));
+    const nodes = [...profileNodes, ...seedNodes];
     const emptyEl     = document.getElementById("graphEmpty");
     const containerEl = document.getElementById("graphContainer");
 
@@ -1109,6 +1246,8 @@
   // ── Quiz (modal) ─────────────────────────────────────────────────────────────
 
   let _quizQuestions = [];
+  let _quizAllowedConcepts = [];  // concept IDs whitelisted from the active PDF/group
+  let _activeGroupData     = null; // full group metadata when a group is active
 
   // Wire static buttons (openQuiz is also called via onclick attributes)
   document.getElementById("quizCloseBtn")   .addEventListener("click", closeQuiz);
@@ -1157,8 +1296,8 @@
     const btn    = document.getElementById("quizGenerateBtn");
     const status = document.getElementById("quizStatus");
 
-    if (!currentDocId && !topic) {
-      status.textContent = "⚠️ Upload a PDF first, or type a topic to quiz on.";
+    if (!currentDocId && !activeGroupId && !topic) {
+      status.textContent = "⚠️ Upload a PDF (or activate a group), or type a topic to quiz on.";
       status.style.color = "#ef4444";
       return;
     }
@@ -1171,7 +1310,12 @@
       const res  = await fetch("/api/quiz/generate", {
         method:  "POST",
         headers: {"Content-Type": "application/json"},
-        body:    JSON.stringify({ doc_id: currentDocId || null, topic: topic || null, n_questions: n }),
+        body:    JSON.stringify({
+          doc_id:      activeGroupId ? null : (currentDocId || null),
+          group_id:    activeGroupId || null,
+          topic:       topic || null,
+          n_questions: n
+        }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {
@@ -1181,6 +1325,7 @@
         return;
       }
       _quizQuestions = data.questions || [];
+      _quizAllowedConcepts = data.allowed_concept_ids || [];
       if (!_quizQuestions.length) {
         status.textContent = "⚠️ No questions returned. Try a different topic.";
         status.style.color = "#ef4444";
@@ -1248,7 +1393,7 @@
       const res  = await fetch("/api/quiz/submit", {
         method:  "POST",
         headers: {"Content-Type": "application/json"},
-        body:    JSON.stringify({ learner_id: learnerId, answers }),
+        body:    JSON.stringify({ learner_id: learnerId, answers, allowed_concept_ids: _quizAllowedConcepts, group_id: activeGroupId || null }),
       });
       const data = await res.json();
       if (!res.ok || data.error) { alert(data.error || "Submission failed."); return; }
@@ -1341,6 +1486,20 @@
   function updateMasteryTab(allConcepts, docCids) {
     _currentMasteryAllConcepts = allConcepts || [];
 
+    // Update context label
+    const ctxEl = document.getElementById("masteryContextLabel");
+    if (ctxEl) {
+      if (activeGroupId && activeGroupName) {
+        ctxEl.textContent = `📁 Showing mastery for group: ${activeGroupName}`;
+        ctxEl.style.display = "block";
+      } else if (currentDocName) {
+        ctxEl.textContent = `📄 Showing mastery for: ${currentDocName}`;
+        ctxEl.style.display = "block";
+      } else {
+        ctxEl.style.display = "none";
+      }
+    }
+
     // Build mastery map from profile data
     const masteryMap = {};
     for (const c of _currentMasteryAllConcepts) masteryMap[c.concept_id] = c;
@@ -1401,7 +1560,7 @@
           </div>
           <span style="font-size:0.81rem;font-weight:700;color:${clr};width:34px;text-align:right;flex-shrink:0">${pct}%</span>
           <span style="font-size:0.7rem;color:#9ca3af;min-width:76px;flex-shrink:0">${att}</span>
-          <button onclick="openQuiz(${JSON.stringify(label)})" title="Quiz on this concept"
+          <button onclick="openQuiz(this.getAttribute('data-topic'))" data-topic="${_esc(label)}" title="Quiz on this concept"
             style="padding:3px 9px;background:#e0e7ff;color:#4338ca;border:none;border-radius:4px;font-size:0.73rem;cursor:pointer;flex-shrink:0;font-weight:600">Quiz ▶</button>
         </div>`;
     }).join("");
@@ -1409,6 +1568,299 @@
 
   document.getElementById("masterySearch")?.addEventListener("input",  _renderMasteryRows);
   document.getElementById("masterySort")  ?.addEventListener("change", _renderMasteryRows);
+
+  // ── Group Study Plan helpers ────────────────────────────────────────────────────
+
+  async function _renderGroupStudySection(groupData) {
+    const section = document.getElementById("groupStudyPlanSection");
+    if (!section) return;
+    if (!groupData) { section.style.display = "none"; return; }
+    document.getElementById("groupStudyGroupName").textContent = groupData.name;
+    section.style.display = "block";
+
+    // Docs list
+    const docList = document.getElementById("groupStudyDocList");
+    const docs = groupData.docs || [];
+    docList.innerHTML = !docs.length
+      ? "<p style='color:#9ca3af;font-size:0.84rem'>No PDFs yet — upload from 👤 Profile.</p>"
+      : docs.map(d => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:${d.loaded ? '#f0fdf4' : '#f9fafb'};border:1px solid ${d.loaded ? '#bbf7d0' : '#e5e7eb'};border-radius:7px;margin-bottom:6px;flex-wrap:wrap">
+            <span style="flex:1;min-width:120px;font-size:0.84rem;color:#374151;font-weight:500">${_esc(d.filename)}</span>
+            <span style="font-size:0.75rem;color:${d.loaded ? '#059669' : '#9ca3af'}">${d.loaded ? '✅ Loaded' : '⏳ Needs re-upload'}</span>
+            <span style="font-size:0.75rem;color:#9ca3af">${d.pages || 0} pg</span>
+          </div>`).join("");
+
+    // Fetch saved plan status
+    try {
+      const res  = await fetch("/api/groups/" + groupData.group_id + "/study-plan");
+      const data = await res.json();
+      const stale   = document.getElementById("groupPlanStaleBanner");
+      const loading = document.getElementById("groupPlanLoading");
+      const content = document.getElementById("groupPlanContent");
+      const empty   = document.getElementById("groupPlanEmpty");
+      const genBtn  = document.getElementById("generateGroupPlanBtn");
+      loading.style.display = "none";
+      if (data.has_plan) {
+        content.style.display = "block";
+        empty.style.display   = "none";
+        genBtn.textContent    = "🔄 Regenerate Plan";
+        document.getElementById("groupPlanMd").innerHTML = marked(data.plan);
+        const blob = new Blob([data.plan], {type: "text/markdown"});
+        const dl   = document.getElementById("groupPlanDownload");
+        dl.href     = URL.createObjectURL(blob);
+        dl.download = (groupData.name || "group").replace(/[^a-z0-9]/gi, "_") + "_study_plan.md";
+        stale.style.display = data.plan_needs_update ? "flex" : "none";
+      } else {
+        content.style.display = "none";
+        stale.style.display   = "none";
+        empty.style.display   = "block";
+        genBtn.textContent    = "✨ Generate Plan";
+      }
+    } catch(e) {
+      console.warn("Could not load group plan:", e);
+    }
+  }
+
+  async function generateGroupStudyPlan() {
+    const gid = activeGroupId;
+    if (!gid) return;
+    const btn     = document.getElementById("generateGroupPlanBtn");
+    const loading = document.getElementById("groupPlanLoading");
+    const content = document.getElementById("groupPlanContent");
+    const empty   = document.getElementById("groupPlanEmpty");
+    const stale   = document.getElementById("groupPlanStaleBanner");
+    btn.disabled = true;
+    btn.textContent = "Generating…";
+    loading.style.display = "block";
+    content.style.display = "none";
+    empty.style.display   = "none";
+    stale.style.display   = "none";
+    try {
+      const res  = await fetch("/api/groups/" + gid + "/study-plan", { method: "POST" });
+      const data = await res.json();
+      loading.style.display = "none";
+      if (data.error) {
+        empty.textContent    = "⚠️ " + data.error;
+        empty.style.display  = "block";
+        btn.textContent = "✨ Generate Plan";
+        return;
+      }
+      document.getElementById("groupPlanMd").innerHTML = marked(data.plan);
+      const blob = new Blob([data.plan], {type: "text/markdown"});
+      const dl   = document.getElementById("groupPlanDownload");
+      dl.href     = URL.createObjectURL(blob);
+      dl.download = (activeGroupName || "group").replace(/[^a-z0-9]/gi, "_") + "_study_plan.md";
+      content.style.display = "block";
+      empty.style.display   = "none";
+      btn.textContent = "🔄 Regenerate Plan";
+    } catch(e) {
+      loading.style.display = "none";
+      empty.textContent    = "⚠️ Error: " + e.message;
+      empty.style.display  = "block";
+      btn.textContent = "✨ Generate Plan";
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── Profile / Groups ─────────────────────────────────────────────────────
+
+  async function loadProfile() {
+    const empty    = document.getElementById("profileGroupsEmpty");
+    const list     = document.getElementById("profileGroupsList");
+    const badge    = document.getElementById("profileUserBadge");
+    list.innerHTML = "<p style='color:#9ca3af;font-size:0.85rem'>Loading…</p>";
+    empty.style.display = "none";
+    try {
+      const res  = await fetch("/api/groups");
+      const data = await res.json();
+      if (!res.ok) { list.innerHTML = "<p style='color:#ef4444'>" + (data.error||"Error") + "</p>"; return; }
+      if (learnerId) badge.textContent = "ID: " + learnerId;
+      _renderProfileGroups(data.groups || []);
+      // When a group is active, aggregate its concept IDs and feed mastery tab
+      if (activeGroupId) {
+        const ag = (data.groups || []).find(g => g.group_id === activeGroupId);
+        if (ag) {
+          _activeGroupData = ag;
+          const gcids = [];
+          const gcSeen = new Set();
+          for (const d of (ag.docs || []))
+            for (const cid of (d.concept_ids || []))
+              if (!gcSeen.has(cid)) { gcSeen.add(cid); gcids.push(cid); }
+          docConceptIds = gcids;
+          updateMasteryTab(_currentMasteryAllConcepts, docConceptIds);
+          // Fetch group-scoped mastery so the mastery tab shows this group's progress
+          if (learnerId) {
+            try {
+              const mr = await fetch(`/api/mastery?learner_id=${encodeURIComponent(learnerId)}&group_id=${encodeURIComponent(activeGroupId)}`);
+              const md = await mr.json();
+              if (Array.isArray(md.all_concepts)) {
+                _currentMasteryAllConcepts = md.all_concepts;
+                updateMasteryTab(_currentMasteryAllConcepts, docConceptIds);
+              }
+            } catch (_) {}
+          }
+          _renderGroupStudySection(ag);
+          const cntEl = document.getElementById("groupDocCount");
+          if (cntEl) cntEl.textContent = `(${ag.doc_count} PDF${ag.doc_count !== 1 ? "s" : ""})`;
+        }
+      } else {
+        _renderGroupStudySection(null);
+      }
+    } catch(e) {
+      list.innerHTML = "<p style='color:#ef4444'>Failed to load groups: " + e.message + "</p>";
+    }
+  }
+
+  function _renderProfileGroups(groups) {
+    const empty = document.getElementById("profileGroupsEmpty");
+    const list  = document.getElementById("profileGroupsList");
+    if (!groups.length) {
+      list.innerHTML = "";
+      empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+    list.innerHTML = groups.map(g => {
+      const isActive = g.group_id === activeGroupId;
+      const docChips = (g.docs || []).map(d =>
+        `<span class="group-doc-chip ${d.loaded ? 'loaded' : ''}" title="${_esc(d.filename)}">
+          ${d.loaded ? '✅' : '⏳'} ${_esc(d.filename.length > 22 ? d.filename.slice(0,20)+'...' : d.filename)}
+        </span>`
+      ).join("");
+      const docLimitReached = g.doc_count >= 10;
+      return `
+        <div class="group-card ${isActive ? 'active-group' : ''}" id="gcard-${g.group_id}">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <h3>📁 ${_esc(g.name)}
+              <span style="font-size:0.72rem;font-weight:400;color:#6b7280">${g.doc_count}/10 PDFs</span>
+            </h3>
+            <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+              <button class="group-activate-btn ${isActive ? 'deactivate' : ''}"
+                onclick="activateGroup('${g.group_id}','${_esc(g.name)}',${ isActive })">
+                ${isActive ? '❌ Deactivate' : '▶ Use in Chat'}
+              </button>
+              <label class="group-upload-btn ${docLimitReached ? 'disabled' : ''}">
+                ${docLimitReached ? '🚫 Max 10' : '⬆ Upload PDF'}
+                <input type="file" accept=".pdf" style="display:none"
+                  onchange="uploadToGroup('${g.group_id}', this)" ${docLimitReached ? 'disabled' : ''} />
+              </label>
+            </div>
+          </div>
+          <div id="gcard-docs-${g.group_id}" style="margin-top:6px;flex-wrap:wrap;display:flex">
+            ${docChips || '<span style="font-size:0.78rem;color:#9ca3af">No PDFs yet — upload one above.</span>'}
+          </div>
+          <div id="gcard-status-${g.group_id}" style="font-size:0.78rem;margin-top:5px;min-height:14px"></div>
+        </div>`;
+    }).join("");
+  }
+
+  async function createGroup() {
+    const input  = document.getElementById("newGroupName");
+    const status = document.getElementById("profileCreateStatus");
+    const name   = input.value.trim();
+    if (!name) { input.focus(); return; }
+    status.textContent = "Creating…";
+    status.style.color = "#6b7280";
+    try {
+      const res  = await fetch("/api/groups", {
+        method:  "POST",
+        headers: {"Content-Type": "application/json"},
+        body:    JSON.stringify({name}),
+      });
+      const data = await res.json();
+      if (!res.ok) { status.textContent = "⚠️ " + (data.error||"Error"); status.style.color="#ef4444"; return; }
+      input.value = "";
+      status.textContent = "✅ Group \u201c" + name + "\u201d created!";
+      status.style.color = "#059669";
+      setTimeout(() => { status.textContent = ""; }, 3000);
+      loadProfile();
+    } catch(e) {
+      status.textContent = "⚠️ " + e.message;
+      status.style.color = "#ef4444";
+    }
+  }
+
+  document.getElementById("newGroupName")?.addEventListener("keydown", e => {
+    if (e.key === "Enter") createGroup();
+  });
+
+  function activateGroup(gid, name, isCurrentlyActive) {
+    if (isCurrentlyActive) {
+      deactivateGroup();
+      return;
+    }
+    activeGroupId   = gid;
+    activeGroupName = name;
+    // clear single-doc context when a group is active
+    currentDocId   = null;
+    currentDocName = null;
+    document.getElementById("pdfBanner").style.display = "none";
+    // show group banner
+    const gb = document.getElementById("groupBanner");
+    gb.style.display = "flex";
+    document.getElementById("groupBannerName").textContent = name;
+    document.getElementById("groupDocCount").textContent   = "";
+    loadProfile();  // re-render + aggregate concept IDs
+  }
+
+  function deactivateGroup() {
+    activeGroupId    = null;
+    activeGroupName  = null;
+    _activeGroupData = null;
+    docConceptIds    = [];
+    document.getElementById("groupBanner").style.display = "none";
+    _renderGroupStudySection(null);
+    updateMasteryTab(_currentMasteryAllConcepts, docConceptIds);
+    loadProfile();
+  }
+
+  async function uploadToGroup(gid, inputEl) {
+    const file = inputEl.files[0];
+    if (!file) return;
+    const status = document.getElementById("gcard-status-" + gid);
+    if (status) { status.textContent = "⏳ Uploading " + file.name + "…"; status.style.color="#6b7280"; }
+    const fd = new FormData();
+    fd.append("pdf", file);
+    inputEl.value = "";
+    try {
+      const res  = await fetch("/api/groups/" + gid + "/upload", { method:"POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        if (status) { status.textContent = "⚠️ " + (data.error||"Upload failed"); status.style.color="#ef4444"; }
+        return;
+      }
+      if (status) { status.textContent = "✅ " + file.name + " processed ("+data.pages_processed+" pages)"; status.style.color="#059669"; }
+      // If this group is active, update mastery concepts too
+      if (gid === activeGroupId && data.concept_ids?.length) {
+        docConceptIds = [...new Set([...docConceptIds, ...data.concept_ids])];
+        updateMasteryTab(_currentMasteryAllConcepts, docConceptIds);
+      }
+      loadProfile();
+    } catch(e) {
+      if (status) { status.textContent = "⚠️ " + e.message; status.style.color="#ef4444"; }
+    }
+  }
+
+  // ── Init (cookie-based user identity) ───────────────────────────────────
+  (async function initApp() {
+    try {
+      const res  = await fetch("/api/me");
+      const data = await res.json();
+      if (data.user_id) {
+        // Use the server-side cookie user_id as the learnerId so memory
+        // stays consistent without the user needing to manage an ID.
+        if (!learnerId) {
+          learnerId = data.user_id;
+          learnerIdEl.textContent = "ID: " + learnerId.slice(0, 18) + "…";
+        }
+        const badge = document.getElementById("profileUserBadge");
+        if (badge) badge.textContent = "ID: " + learnerId;
+      }
+    } catch(e) {
+      console.warn("initApp:", e);
+    }
+  })();
 
 </script>
 </body>

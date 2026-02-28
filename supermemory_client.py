@@ -13,14 +13,26 @@ Naming conventions for tags used as pseudo-keys:
 
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
+import re
 from typing import Any
 
 from supermemory import Supermemory
 
 logger = logging.getLogger(__name__)
+
+
+def _sanitize_tag(value: str) -> str:
+    """Replace characters disallowed by Supermemory container tags (only
+    alphanumeric, hyphens, and underscores are permitted) with underscores.
+    This handles learner IDs like ``uuid|grp|uuid`` and prefixes like
+    ``profile:`` that contain ``|`` and ``:``.
+    """
+    return re.sub(r"[^a-zA-Z0-9\-_]", "_", value)
+
 
 # ── Default profile skeleton ──────────────────────────────────────────────────
 
@@ -50,10 +62,16 @@ class MemoryClient:
     All documents for a learner share the container tag ``learner:{learner_id}``.
     The profile document also carries the tag ``profile:{learner_id}`` so it
     can be retrieved and replaced individually.
+
+    A write-through in-memory cache (_profile_cache) is maintained so that
+    subsequent get_profile calls within the same server process always see the
+    latest saved profile, regardless of Supermemory's indexing latency.
     """
 
     def __init__(self) -> None:
         self._client = Supermemory()   # reads SUPERMEMORY_API_KEY from env
+        # Local write-through cache: learner_id → profile dict
+        self._profile_cache: dict[str, dict[str, Any]] = {}
 
     # ── Profile ───────────────────────────────────────────────────────────────
 
@@ -83,8 +101,18 @@ class MemoryClient:
         """
         Fetch the stored learner profile. Returns a default profile dict if
         nothing is found (first visit).
+
+        Checks the local write-through cache first to avoid Supermemory's
+        eventual-consistency window (which would return a stale/blank profile
+        right after a put_profile call, deleting mastery concepts).
         """
-        tag = f"profile:{learner_id}"
+        # 1) Local cache hit — always authoritative within a server process
+        if learner_id in self._profile_cache:
+            logger.debug("get_profile cache hit for %s", learner_id)
+            return copy.deepcopy(self._profile_cache[learner_id])
+
+        # 2) Cold start — fall back to Supermemory
+        tag = _sanitize_tag(f"profile:{learner_id}")
         try:
             results = self._client.search.documents(
                 q=f"learner profile {learner_id}",
@@ -96,7 +124,9 @@ class MemoryClient:
                 raw = self._doc_content(docs[0])
                 if raw:
                     profile = json.loads(raw)
-                    logger.debug("get_profile hit for %s", learner_id)
+                    # Warm the cache with what we found in Supermemory
+                    self._profile_cache[learner_id] = profile
+                    logger.debug("get_profile SM hit for %s", learner_id)
                     return profile
                 else:
                     logger.debug("get_profile: result found but content empty for %s", learner_id)
@@ -108,13 +138,19 @@ class MemoryClient:
 
     def put_profile(self, learner_id: str, profile: dict[str, Any]) -> None:
         """
-        Overwrite the stored profile. 
-        Strategy: delete any existing profile docs, then insert fresh.
+        Overwrite the stored profile.
+        Strategy: update local cache immediately (so subsequent get_profile
+        calls within this process always see the latest data), then persist
+        to Supermemory by deleting old docs and inserting fresh.
         """
-        tag = f"profile:{learner_id}"
-        learner_tag = f"learner:{learner_id}"
+        # 1) Update local cache first — prevents mastery data loss due to
+        #    Supermemory's eventual-consistency indexing latency.
+        self._profile_cache[learner_id] = copy.deepcopy(profile)
 
-        # 1) Delete old profile docs
+        tag = _sanitize_tag(f"profile:{learner_id}")
+        learner_tag = _sanitize_tag(f"learner:{learner_id}")
+
+        # 2) Delete old profile docs in Supermemory
         try:
             results = self._client.search.documents(
                 q=f"learner profile {learner_id}",
@@ -133,7 +169,7 @@ class MemoryClient:
         except Exception as exc:
             logger.warning("put_profile pre-delete search failed for %s: %s", learner_id, exc)
 
-        # 2) Insert fresh profile
+        # 3) Insert fresh profile into Supermemory
         try:
             self._client.add(
                 content=json.dumps(profile, ensure_ascii=False),
@@ -141,8 +177,9 @@ class MemoryClient:
             )
             logger.debug("put_profile stored for %s", learner_id)
         except Exception as exc:
+            # Cache is already updated above, so mastery data is safe within
+            # this process even if Supermemory persistence fails.
             logger.error("put_profile insert failed for %s: %s", learner_id, exc)
-            raise
 
     # ── Events ────────────────────────────────────────────────────────────────
 
@@ -151,8 +188,8 @@ class MemoryClient:
         Append a turn-event document. Events accumulate; old ones are never
         deleted automatically.
         """
-        event_tag = f"event:{learner_id}"
-        learner_tag = f"learner:{learner_id}"
+        event_tag = _sanitize_tag(f"event:{learner_id}")
+        learner_tag = _sanitize_tag(f"learner:{learner_id}")
         try:
             self._client.add(
                 content=json.dumps(event, ensure_ascii=False),
@@ -170,7 +207,7 @@ class MemoryClient:
         Return up to `limit` recent event dicts, newest-first where possible.
         Returns empty list on any error.
         """
-        tag = f"event:{learner_id}"
+        tag = _sanitize_tag(f"event:{learner_id}")
         try:
             results = self._client.search.documents(
                 q=f"session turn event {learner_id}",
@@ -203,7 +240,7 @@ class MemoryClient:
         """
         import base64
 
-        doc_tag = f"doc:{doc_id}"
+        doc_tag = _sanitize_tag(f"doc:{doc_id}")
         try:
             with open(pdf_path, "rb") as fh:
                 b64_content = base64.b64encode(fh.read()).decode("utf-8")
@@ -237,7 +274,7 @@ class MemoryClient:
         ordered by relevance.  Returns an empty list on any error so callers
         can degrade gracefully.
         """
-        doc_tag = f"doc:{doc_id}"
+        doc_tag = _sanitize_tag(f"doc:{doc_id}")
         try:
             results = self._client.search.documents(
                 q=query,
