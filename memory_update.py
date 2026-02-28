@@ -249,9 +249,19 @@ def build_memory_preview(profile: dict[str, Any]) -> dict[str, Any]:
             seen.add(key)
             links.append({"source": cid_a, "target": cid_b, "weight": weight})
 
+    all_concepts = sorted(
+        [{"concept_id": cid,
+          "mastery":     round(v["mastery"], 3),
+          "attempts":    v.get("attempts", 0),
+          "last_outcome": v.get("last_outcome", "")}
+         for cid, v in concepts.items()],
+        key=lambda x: x["mastery"],
+    )
+
     return {
         "weak_concepts":   weak,
         "misconceptions":  misconceptions_preview,
         "preferences":     profile.get("preferences", {}),
         "graph":           {"nodes": nodes, "links": links},
+        "all_concepts":    all_concepts,
     }

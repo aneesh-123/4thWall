@@ -106,6 +106,19 @@ def extract():
 
         total_subtopics = sum(len(t.subtopics) for t in topics)
 
+        # Extract pre-seeded concept slugs from the study-plan subtopic names.
+        # These seed the mastery tab at 0 % before any chat or quiz has happened.
+        concept_ids: list[str] = []
+        _seen_cids: set[str] = set()
+        for _topic in topics:
+            for _sub in _topic.subtopics:
+                _raw  = _sub.name.lower()
+                _slug = "".join(c if c.isalnum() else "_" for c in _raw)
+                _slug = "_".join(p for p in _slug.split("_") if p)[:48]
+                if _slug and _slug not in _seen_cids:
+                    concept_ids.append(_slug)
+                    _seen_cids.add(_slug)
+
         # Store study plan + TF-IDF index for the chat tutor
         doc_id          = str(uuid.uuid4())
         retrieval_index = build_index(cleaned)   # reuse already-cleaned pages
@@ -116,6 +129,7 @@ def extract():
             "pages":           len(pages),
             "retrieval_index": retrieval_index,
             "sm_uploaded":     False,   # set to True after Supermemory upload
+            "concept_ids":     concept_ids,
         }
         logger.info("Stored doc_id=%s filename=%s chunks=%d",
                     doc_id, pdf_file.filename,
@@ -137,6 +151,7 @@ def extract():
             "topics_count":    len(topics),
             "subtopics_count": total_subtopics,
             "sm_uploaded":     _doc_store[doc_id]["sm_uploaded"],
+            "concept_ids":     concept_ids,
         })
 
     except NotImplementedError:

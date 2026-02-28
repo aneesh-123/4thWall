@@ -308,6 +308,24 @@
     .pref-key { color: #888; }
     .pref-val { font-weight: 600; color: #4f46e5; }
     #learnerId { font-size: 0.7rem; color: #bbb; word-break: break-all; margin-top: 6px; }
+
+    /* ── Mastery tab ── */
+    .mastery-concept-row { transition: background 0.15s; }
+    .mastery-concept-row:hover { filter: brightness(0.97); }
+    #masteryRows { max-height: 560px; overflow-y: auto; padding-right: 2px; }
+
+    /* ── Quiz modal ── */
+    #quizModal {
+      display: none; position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.55); overflow-y: auto;
+      padding: 28px 16px; align-items: flex-start; justify-content: center;
+    }
+    #quizModal.open { display: flex; }
+    #quizModalInner {
+      background: #fff; border-radius: 14px; width: 100%; max-width: 680px;
+      margin: auto; padding: 28px 30px 24px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.3); position: relative;
+    }
   </style>
 </head>
 <body>
@@ -323,6 +341,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="pdf">📄 PDF → Study Plan</button>
     <button class="tab-btn"        data-tab="chat">💬 Tutor Chat</button>
+    <button class="tab-btn"        data-tab="mastery">📊 Mastery</button>
     <button class="tab-btn"        data-tab="graph">🧠 Knowledge Graph</button>
   </div>
 
@@ -412,48 +431,8 @@
               <option value="confused">😕 Still confused</option>
               <option value="incorrect">❌ I was wrong (incorrect)</option>
             </select>
-            <button id="quizOpenBtn" style="margin-left:auto;padding:5px 13px;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0;border-radius:6px;font-size:0.82rem;cursor:pointer;font-weight:600">📝 Quiz Me</button>
+            <button id="quizOpenBtn" onclick="openQuiz()" style="margin-left:auto;padding:5px 13px;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0;border-radius:6px;font-size:0.82rem;cursor:pointer;font-weight:600">📝 Quiz Me</button>
           </div>
-
-          <!-- Quiz panel (initially hidden) -->
-          <div id="quizPanel" style="display:none;border:1px solid #e0e7ff;border-radius:10px;background:#fafffe;padding:16px;margin-bottom:12px">
-
-            <!-- Setup view -->
-            <div id="quizSetup">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                <span style="font-weight:700;font-size:0.95rem;color:#1f2937">📝 Quiz Generator</span>
-                <button id="quizCloseBtn" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:1.1rem;line-height:1" title="Close quiz">✕</button>
-              </div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                <input id="quizTopic" placeholder="Topic (optional — blank = whole PDF)…"
-                  style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" />
-                <select id="quizN" style="padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;background:#fff;cursor:pointer">
-                  <option value="3">3 questions</option>
-                  <option value="5" selected>5 questions</option>
-                  <option value="8">8 questions</option>
-                  <option value="10">10 questions</option>
-                </select>
-                <button id="quizGenerateBtn"
-                  style="padding:7px 16px;background:#4f46e5;color:#fff;border:none;border-radius:6px;font-size:0.85rem;cursor:pointer;font-weight:600;white-space:nowrap">Generate ✨</button>
-              </div>
-              <div id="quizStatus" style="font-size:0.82rem;margin-top:7px;min-height:18px"></div>
-            </div>
-
-            <!-- Questions view (injected by JS) -->
-            <div id="quizQuestions" style="display:none;max-height:500px;overflow-y:auto;padding-right:2px"></div>
-
-            <!-- Submit / reset row -->
-            <div id="quizSubmitRow" style="display:none;gap:8px;margin-top:12px">
-              <button id="quizSubmitBtn"
-                style="flex:1;padding:9px 16px;background:#059669;color:#fff;border:none;border-radius:7px;font-size:0.87rem;cursor:pointer;font-weight:700">Submit Quiz →</button>
-              <button id="quizResetBtn"
-                style="padding:9px 14px;background:#f3f4f6;color:#374151;border:none;border-radius:7px;font-size:0.87rem;cursor:pointer">↺ Reset</button>
-            </div>
-
-            <!-- Results view (injected by JS) -->
-            <div id="quizResults" style="display:none"></div>
-
-          </div><!-- /quizPanel -->
 
           <!-- chat window -->
           <div id="chatWindow">
@@ -479,7 +458,10 @@
         <h3>🧠 Memory</h3>
 
         <div class="mem-section">
-          <div class="mem-label">Weak Concepts</div>
+          <div class="mem-label" style="display:flex;align-items:center;justify-content:space-between">
+            <span>Concepts</span>
+            <button onclick="switchToMastery()" style="background:none;border:none;cursor:pointer;color:#4f46e5;font-size:0.7rem;font-weight:700;padding:0;line-height:1">View All →</button>
+          </div>
           <div id="memConcepts"><span style="color:#bbb;font-size:0.75rem">none yet</span></div>
         </div>
 
@@ -526,7 +508,85 @@
     </div>
   </div><!-- /tab-graph -->
 
-</div><!-- /page -->
+  <!-- ── Mastery tab ── -->
+  <div class="tab-panel" id="tab-mastery">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <h2 style="margin:0">📊 Concept Mastery</h2>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <span id="masteryStats" style="font-size:0.83rem;color:#888"></span>
+          <button onclick="openQuiz()" style="padding:6px 14px;background:#4f46e5;color:#fff;border:none;border-radius:7px;font-size:0.83rem;cursor:pointer;font-weight:600">📝 Quiz Me</button>
+        </div>
+      </div>
+
+      <div id="masteryEmpty" style="text-align:center;padding:56px 24px;color:#aaa">
+        <div style="font-size:2.5rem">📚</div>
+        <p style="margin-top:10px">Upload a PDF or start chatting to see your concept mastery here.</p>
+        <p style="margin-top:6px;font-size:0.82rem">Each concept from the study plan starts at 0 % and updates as you chat or take quizzes.</p>
+      </div>
+
+      <div id="masteryList" style="display:none">
+        <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+          <input id="masterySearch" placeholder="Filter concepts…"
+            style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" />
+          <select id="masterySort" style="padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;background:#fff;cursor:pointer">
+            <option value="mastery-asc">Lowest first</option>
+            <option value="mastery-desc">Highest first</option>
+            <option value="alpha">A → Z</option>
+            <option value="attempts-desc">Most practiced</option>
+          </select>
+        </div>
+        <!-- legend -->
+        <div style="display:flex;gap:14px;margin-bottom:12px;font-size:0.76rem;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#d1d5db;display:inline-block"></span>Not practiced</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#ef4444;display:inline-block"></span>Low (&lt;30%)</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b;display:inline-block"></span>Building (30–60%)</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#22c55e;display:inline-block"></span>Strong (≥60%)</span>
+        </div>
+        <div id="masteryRows"></div>
+      </div>
+    </div>
+  </div><!-- /tab-mastery -->
+
+<!-- ── Quiz Modal ── -->
+<div id="quizModal">
+  <div id="quizModalInner">
+    <!-- Setup view -->
+    <div id="quizSetup">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <span style="font-weight:700;font-size:1.05rem;color:#1f2937">📝 Quiz Generator</span>
+        <button id="quizCloseBtn" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:1.25rem;line-height:1" title="Close">✕</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input id="quizTopic" placeholder="Topic (optional — blank = whole PDF)…"
+          style="flex:1;min-width:180px;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.86rem" />
+        <select id="quizN" style="padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.86rem;background:#fff;cursor:pointer">
+          <option value="3">3 questions</option>
+          <option value="5" selected>5 questions</option>
+          <option value="8">8 questions</option>
+          <option value="10">10 questions</option>
+        </select>
+        <button id="quizGenerateBtn"
+          style="padding:8px 18px;background:#4f46e5;color:#fff;border:none;border-radius:6px;font-size:0.86rem;cursor:pointer;font-weight:600;white-space:nowrap">Generate ✨</button>
+      </div>
+      <div id="quizStatus" style="font-size:0.82rem;margin-top:8px;min-height:18px"></div>
+    </div>
+
+    <!-- Questions view (injected by JS) -->
+    <div id="quizQuestions" style="display:none;max-height:460px;overflow-y:auto;padding-right:4px;margin-top:6px"></div>
+
+    <!-- Submit / reset row -->
+    <div id="quizSubmitRow" style="display:none;gap:8px;margin-top:14px">
+      <button id="quizSubmitBtn"
+        style="flex:1;padding:10px 16px;background:#059669;color:#fff;border:none;border-radius:7px;font-size:0.88rem;cursor:pointer;font-weight:700">Submit Quiz →</button>
+      <button id="quizResetBtn"
+        style="padding:10px 14px;background:#f3f4f6;color:#374151;border:none;border-radius:7px;font-size:0.88rem;cursor:pointer">↺ Reset</button>
+    </div>
+
+    <!-- Results view (injected by JS) -->
+    <div id="quizResults" style="display:none"></div>
+  </div>
+</div>
 
 <!-- marked.js for client-side markdown rendering -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -539,7 +599,10 @@
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
       btn.classList.add("active");
-      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");      if (btn.dataset.tab === "graph") refreshKnowledgeGraph();    });
+      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+      if (btn.dataset.tab === "graph")   refreshKnowledgeGraph();
+      if (btn.dataset.tab === "mastery") updateMasteryTab(_currentMasteryAllConcepts, docConceptIds);
+    });
   });
 
   // ── PDF tab ───────────────────────────────────────────────────────────────
@@ -593,7 +656,10 @@
       if (data.doc_id) {
         currentDocId   = data.doc_id;
         currentDocName = selectedFile.name;
+        docConceptIds  = data.concept_ids || [];
         showPdfBanner(currentDocName, data.sm_uploaded);
+        // Seed mastery tab with 0 % for all PDF concepts
+        updateMasteryTab([], docConceptIds);
         // Prompt user to switch to chat
         document.getElementById("switchChatHint").style.display = "block";
       }
@@ -652,6 +718,14 @@
     msgBox.focus();
   }
 
+  function switchToMastery() {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    document.querySelector(".tab-btn[data-tab='mastery']").classList.add("active");
+    document.getElementById("tab-mastery").classList.add("active");
+    updateMasteryTab(_currentMasteryAllConcepts, docConceptIds);
+  }
+
   // ── Chat tab ──────────────────────────────────────────────────────────────
   const chatWindow     = document.getElementById("chatWindow");
   const msgBox         = document.getElementById("msgBox");
@@ -667,6 +741,9 @@
   let sessionCode = null;        // shared session code, if active
   let currentDocId = null;       // set after PDF extraction
   let currentDocName = null;
+  let docConceptIds  = [];       // concept slugs seeded from the PDF study plan
+  let _currentMasteryAllConcepts = [];  // latest all_concepts from memory_preview
+  let _currentMasteryRows = [];  // flattened rows used by _renderMasteryRows
 
   // ── Session controls ──────────────────────────────────────────────────────
   const createSessionBtn = document.getElementById("createSessionBtn");
@@ -823,6 +900,11 @@
     // Live-update graph if the graph tab is visible
     if (preview.graph && document.getElementById("tab-graph").classList.contains("active")) {
       _renderGraphFromPreview(preview.graph);
+    }
+
+    // Update mastery tab (always, so it's fresh when user switches to it)
+    if (Array.isArray(preview.all_concepts)) {
+      updateMasteryTab(preview.all_concepts, docConceptIds);
     }
   }
 
@@ -1024,25 +1106,34 @@
     });
   }
 
-  // ── Quiz ──────────────────────────────────────────────────────────────────────
+  // ── Quiz (modal) ─────────────────────────────────────────────────────────────
 
   let _quizQuestions = [];
 
-  // Wire static buttons
-  document.getElementById("quizOpenBtn")   .addEventListener("click", openQuiz);
-  document.getElementById("quizCloseBtn")  .addEventListener("click", closeQuiz);
+  // Wire static buttons (openQuiz is also called via onclick attributes)
+  document.getElementById("quizCloseBtn")   .addEventListener("click", closeQuiz);
   document.getElementById("quizGenerateBtn").addEventListener("click", generateQuiz);
-  document.getElementById("quizSubmitBtn") .addEventListener("click", submitQuiz);
-  document.getElementById("quizResetBtn")  .addEventListener("click", resetQuiz);
-  document.getElementById("quizTopic")     .addEventListener("keydown", e => { if (e.key === "Enter") generateQuiz(); });
+  document.getElementById("quizSubmitBtn")  .addEventListener("click", submitQuiz);
+  document.getElementById("quizResetBtn")   .addEventListener("click", resetQuiz);
+  document.getElementById("quizTopic")      .addEventListener("keydown", e => { if (e.key === "Enter") generateQuiz(); });
+  // Close on backdrop click
+  document.getElementById("quizModal").addEventListener("click", e => {
+    if (e.target === document.getElementById("quizModal")) closeQuiz();
+  });
+  // Close on Escape
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && document.getElementById("quizModal").classList.contains("open")) closeQuiz();
+  });
 
-  function openQuiz() {
-    document.getElementById("quizPanel").style.display = "block";
+  function openQuiz(prefillTopic) {
+    resetQuiz();
+    if (prefillTopic) document.getElementById("quizTopic").value = prefillTopic;
+    document.getElementById("quizModal").classList.add("open");
     document.getElementById("quizTopic").focus();
   }
 
   function closeQuiz() {
-    document.getElementById("quizPanel").style.display = "none";
+    document.getElementById("quizModal").classList.remove("open");
   }
 
   function resetQuiz() {
@@ -1057,6 +1148,7 @@
     document.getElementById("quizResults").innerHTML       = "";
     document.getElementById("quizGenerateBtn").disabled    = false;
     document.getElementById("quizGenerateBtn").textContent = "Generate ✨";
+    // Don't clear topic — user may have prefilled it from mastery tab
   }
 
   async function generateQuiz() {
@@ -1243,6 +1335,80 @@
       .replace(/&/g, "&amp;").replace(/</g, "&lt;")
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
+
+  // ── Mastery tab ────────────────────────────────────────────────────────────
+
+  function updateMasteryTab(allConcepts, docCids) {
+    _currentMasteryAllConcepts = allConcepts || [];
+
+    // Build mastery map from profile data
+    const masteryMap = {};
+    for (const c of _currentMasteryAllConcepts) masteryMap[c.concept_id] = c;
+
+    // Merge: PDF seeded concepts first, then any chat/quiz concepts not in the PDF
+    const rows = [];
+    const seen = new Set();
+    for (const cid of (docCids || [])) {
+      seen.add(cid);
+      rows.push(masteryMap[cid] || { concept_id: cid, mastery: 0, attempts: 0, last_outcome: "" });
+    }
+    for (const c of _currentMasteryAllConcepts) {
+      if (!seen.has(c.concept_id)) { seen.add(c.concept_id); rows.push(c); }
+    }
+
+    _currentMasteryRows = rows;
+
+    const empty = document.getElementById("masteryEmpty");
+    const list  = document.getElementById("masteryList");
+    const stats = document.getElementById("masteryStats");
+    if (!rows.length) {
+      empty.style.display = "block"; list.style.display = "none"; return;
+    }
+    empty.style.display = "none"; list.style.display = "block";
+    const practiced = rows.filter(r => r.attempts > 0).length;
+    stats.textContent = practiced + " / " + rows.length + " practiced";
+    _renderMasteryRows();
+  }
+
+  function _renderMasteryRows() {
+    const search = (document.getElementById("masterySearch")?.value || "").toLowerCase();
+    const sort   = document.getElementById("masterySort")?.value || "mastery-asc";
+    let filtered = _currentMasteryRows;
+    if (search) filtered = filtered.filter(r => r.concept_id.includes(search));
+    const sorted = [...filtered].sort((a, b) => {
+      if (sort === "mastery-asc")   return a.mastery - b.mastery;
+      if (sort === "mastery-desc")  return b.mastery - a.mastery;
+      if (sort === "alpha")         return a.concept_id.localeCompare(b.concept_id);
+      if (sort === "attempts-desc") return b.attempts - a.attempts;
+      return 0;
+    });
+    const container = document.getElementById("masteryRows");
+    container.innerHTML = sorted.map(c => {
+      const pct  = Math.round(c.mastery * 100);
+      const clr  = pct >= 60 ? "#22c55e" : pct >= 30 ? "#f59e0b" : pct > 0 ? "#ef4444" : "#d1d5db";
+      const bg   = pct >= 60 ? "#f0fdf4" : pct >= 30 ? "#fffbeb" : pct > 0 ? "#fff1f2" : "#f9fafb";
+      const label = c.concept_id.replace(/_/g, " ");
+      const att  = c.attempts > 0
+        ? c.attempts + " attempt" + (c.attempts !== 1 ? "s" : "")
+        : "not practiced";
+      return `
+        <div class="mastery-concept-row" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;background:${bg};margin-bottom:6px;border:1px solid ${clr}22">
+          <span style="flex:1;font-size:0.87rem;font-weight:${c.attempts > 0 ? '600' : '400'};color:${c.attempts > 0 ? '#1f2937' : '#9ca3af'}" title="${_esc(c.concept_id)}">${_esc(label)}</span>
+          <div style="width:90px;flex-shrink:0">
+            <div style="background:#e5e7eb;border-radius:4px;height:7px;overflow:hidden">
+              <div style="height:100%;border-radius:4px;background:${clr};width:${pct}%;transition:width 0.4s"></div>
+            </div>
+          </div>
+          <span style="font-size:0.81rem;font-weight:700;color:${clr};width:34px;text-align:right;flex-shrink:0">${pct}%</span>
+          <span style="font-size:0.7rem;color:#9ca3af;min-width:76px;flex-shrink:0">${att}</span>
+          <button onclick="openQuiz(${JSON.stringify(label)})" title="Quiz on this concept"
+            style="padding:3px 9px;background:#e0e7ff;color:#4338ca;border:none;border-radius:4px;font-size:0.73rem;cursor:pointer;flex-shrink:0;font-weight:600">Quiz ▶</button>
+        </div>`;
+    }).join("");
+  }
+
+  document.getElementById("masterySearch")?.addEventListener("input",  _renderMasteryRows);
+  document.getElementById("masterySort")  ?.addEventListener("change", _renderMasteryRows);
 
 </script>
 </body>
