@@ -56,6 +56,22 @@ app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024   # 50 MB limit
 # This is process-local; fine for single-server MVP.
 _doc_store: dict[str, dict] = {}
 
+# ── Shared-session store ──────────────────────────────────────────────────────
+# Maps a short human-readable code → learner_id (UUID).
+# All browser tabs that join with the same code share that learner profile,
+# so the whole class / study group can build one knowledge graph together.
+_session_store: dict[str, str] = {}
+
+
+def _make_session_code() -> str:
+    """Generate a unique 6-char uppercase alphanumeric session code."""
+    import random, string
+    alphabet = string.ascii_uppercase + string.digits
+    while True:
+        code = "".join(random.choices(alphabet, k=6))
+        if code not in _session_store:
+            return code
+
 
 @app.route("/")
 def index():
@@ -397,6 +413,37 @@ def chat_turn():
         "doc_found":      doc_ctx is not None,
         "sm_grounded":    bool(semantic_passages),
     })
+
+
+# ── Session endpoints ────────────────────────────────────────────────────────
+
+@app.route("/api/session/create", methods=["POST"])
+def session_create():
+    """
+    POST /api/session/create
+    Creates a new shared session. Returns {code, learner_id}.
+    All users who join with the same code share the same learner_id
+    and therefore the same persistent memory / knowledge graph.
+    """
+    code       = _make_session_code()
+    learner_id = str(uuid.uuid4())
+    _session_store[code] = learner_id
+    logger.info("Session created code=%s learner_id=%s", code, learner_id)
+    return jsonify({"code": code, "learner_id": learner_id})
+
+
+@app.route("/api/session/join/<code>")
+def session_join(code: str):
+    """
+    GET /api/session/join/<code>
+    Returns {code, learner_id} for an existing session, or 404.
+    """
+    code = code.upper().strip()
+    learner_id = _session_store.get(code)
+    if not learner_id:
+        return jsonify({"error": f"Session '{code}' not found."}), 404
+    logger.info("Session joined code=%s learner_id=%s", code, learner_id)
+    return jsonify({"code": code, "learner_id": learner_id})
 
 
 # ── Knowledge-graph endpoint ─────────────────────────────────────────────────

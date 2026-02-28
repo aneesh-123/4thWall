@@ -390,6 +390,18 @@
           <button onclick="clearPdfContext()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem" title="Remove PDF context">✕</button>
         </div>
 
+        <!-- Session bar -->
+        <div id="sessionBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:9px 14px;background:#f8f9ff;border:1px solid #e0e0ff;border-radius:8px;font-size:0.84rem">
+          <span id="sessionBadge" style="display:none;background:#4f46e5;color:#fff;padding:3px 10px;border-radius:5px;font-weight:700;letter-spacing:0.08em;font-size:0.88rem"></span>
+          <span id="sessionInfo" style="color:#555">Share a session code so everyone studies with the same profile &amp; knowledge graph.</span>
+          <button id="createSessionBtn" style="margin-left:auto;padding:5px 12px;background:#4f46e5;color:#fff;border:none;border-radius:6px;font-size:0.82rem;cursor:pointer;font-weight:600">+ Create Session</button>
+          <div id="joinSessionRow" style="display:flex;gap:6px">
+            <input id="joinCodeInput" placeholder="Code (e.g. AB12CD)" maxlength="6"
+              style="width:120px;padding:5px 9px;border:1px solid #ccc;border-radius:6px;font-size:0.82rem;text-transform:uppercase;font-family:monospace" />
+            <button id="joinSessionBtn" style="padding:5px 12px;background:#e0e7ff;color:#4338ca;border:none;border-radius:6px;font-size:0.82rem;cursor:pointer;font-weight:600">Join</button>
+          </div>
+        </div>
+
         <!-- outcome selector row -->
         <div class="outcome-row">
             <label for="outcomeSelect">After each reply, I felt:</label>
@@ -610,9 +622,72 @@
   const learnerIdEl    = document.getElementById("learnerId");
 
   let learnerId = null;
-  let sessionId = null;
+  let sessionId  = null;
+  let sessionCode = null;        // shared session code, if active
   let currentDocId = null;       // set after PDF extraction
   let currentDocName = null;
+
+  // ── Session controls ──────────────────────────────────────────────────────
+  const createSessionBtn = document.getElementById("createSessionBtn");
+  const joinSessionBtn   = document.getElementById("joinSessionBtn");
+  const joinCodeInput    = document.getElementById("joinCodeInput");
+
+  function _applySession(code, id) {
+    sessionCode = code;
+    learnerId   = id;
+    const badge = document.getElementById("sessionBadge");
+    badge.textContent = "👥 Session: " + code;
+    badge.style.display = "inline-block";
+    document.getElementById("sessionInfo").textContent =
+      "Share this code with your group — you\'ll all build the same knowledge graph.";
+    createSessionBtn.textContent = "✓ New Session";
+    learnerIdEl.textContent = "Session: " + code + " · ID: " + id.slice(0, 8) + "…";
+    // Announce in chat
+    const welcome = document.getElementById("welcomeMsg");
+    if (welcome) welcome.remove();
+    appendBubble("system",
+      "👥 Session " + code + " started. Share this code with your group — " +
+      "everyone will contribute to the same learner profile and knowledge graph.");
+  }
+
+  createSessionBtn.addEventListener("click", async () => {
+    createSessionBtn.disabled = true;
+    try {
+      const res  = await fetch("/api/session/create", { method: "POST" });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      _applySession(data.code, data.learner_id);
+      // auto-switch to chat tab
+      switchToChat();
+    } catch(e) {
+      alert("Could not create session: " + e.message);
+    } finally {
+      createSessionBtn.disabled = false;
+    }
+  });
+
+  joinSessionBtn.addEventListener("click", async () => {
+    const code = joinCodeInput.value.trim().toUpperCase();
+    if (!code) { joinCodeInput.focus(); return; }
+    joinSessionBtn.disabled = true;
+    try {
+      const res  = await fetch("/api/session/join/" + code);
+      const data = await res.json();
+      if (!res.ok || data.error) { alert(data.error || "Session not found."); return; }
+      _applySession(data.code, data.learner_id);
+      joinCodeInput.value = "";
+      switchToChat();
+    } catch(e) {
+      alert("Could not join session: " + e.message);
+    } finally {
+      joinSessionBtn.disabled = false;
+    }
+  });
+
+  // Allow pressing Enter in the join input
+  joinCodeInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") joinSessionBtn.click();
+  });
 
   // Auto-resize textarea
   msgBox.addEventListener("input", () => {
@@ -754,10 +829,13 @@
         clearPdfContext();
       }
 
-      // Persist IDs
-      learnerId = data.learner_id;
-      sessionId = data.session_id;
-      learnerIdEl.textContent = "ID: " + learnerId.slice(0, 18) + "…";
+      // Persist IDs — never overwrite a session-locked learner ID
+      if (!sessionCode) {
+        learnerId = data.learner_id;
+        sessionId = data.session_id;
+        learnerIdEl.textContent = "ID: " + learnerId.slice(0, 18) + "…";
+      }
+      // (if in a session, learnerId + display were already set by _applySession)
 
       // Show semantic-grounding badge on the bubble if Supermemory was used
       appendBubble("assistant", data.assistant, data.sm_grounded ? "🔍 Supermemory grounded" : null);
