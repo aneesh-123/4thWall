@@ -113,6 +113,9 @@ function updateMastery({ subtopics, outcome, correctness = 0.5, weight = 1 }) {
     }
 
     const after = clamp(before + delta);
+    if (after > 0.95 && masteryStore[subtopic].weaknesses.length > 0) {
+        after = 0.95
+    }
     masteryStore[subtopic].score = after;
     diff[subtopic] = { before: round(before), after: round(after) };
 
