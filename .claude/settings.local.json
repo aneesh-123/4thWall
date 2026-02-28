@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout -b aneesh)",
+      "Bash(git add README.md)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
