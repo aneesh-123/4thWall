@@ -15,7 +15,7 @@
  */
 
 // ─── Mastery Store ────────────────────────────────────────────────────────────
-// Each key is a subtopic string. Value is a score from 0.0 to 1.0.
+// Each key is a subtopic string. Value is a score from 0.0 to 1.0 and array of weaknesses.
 // You can seed this with prior data or start empty.
 let masteryStore = {};
 
@@ -40,7 +40,10 @@ function clamp(val) {
 }
 
 function getScore(subtopic) {
-  return masteryStore[subtopic] ?? CONFIG.defaultMastery;
+  if (!masteryStore[subtopic]) {
+    return CONFIG.defaultMastery;
+  }
+  return masteryStore[subtopic].score;
 }
 
 // ─── 1. updateMastery ─────────────────────────────────────────────────────────
@@ -48,9 +51,9 @@ function getScore(subtopic) {
  * Updates mastery scores based on a question attempt.
  *
  * @param {Object} result
- * @param {string[]} result.subtopics
- *   List of subtopic keys this question covers.
- *   e.g. ["binary_trees.balanced", "binary_trees.full"]
+ * @param {[subtopic: string]: {"improved": string[], "weak": string[]}} result.subtopics
+ *   List of subtopic keys this question covers, areas for the student to improve in and areas they have improved in.
+ *   e.g. {"binary_trees.balanced":{"improved": ["understands balance"], "weak": ["calculating tree balance incorrectly, confusing right vs left height"]}}
  *
  * @param {"correct" | "incorrect" | "partial"} result.outcome
  *   Whether the student got it right.
@@ -83,7 +86,16 @@ function updateMastery({ subtopics, outcome, correctness = 0.5, weight = 1 }) {
 
   const diff = {};
 
-  for (const subtopic of subtopics) {
+  for (const subtopic in subtopics) {
+    if (!masteryStore[subtopic]) {
+        masteryStore[subtopic] = {
+            score: CONFIG.defaultMastery,
+            weaknesses: []
+        };
+    }
+
+    const { improved = [], weak = [] } = subtopics[subtopic];
+
     const before = getScore(subtopic);
     let delta = 0;
 
@@ -101,8 +113,23 @@ function updateMastery({ subtopics, outcome, correctness = 0.5, weight = 1 }) {
     }
 
     const after = clamp(before + delta);
-    masteryStore[subtopic] = after;
+    masteryStore[subtopic].score = after;
     diff[subtopic] = { before: round(before), after: round(after) };
+
+    // Remove fixed weaknesses
+    for (const item of improved) {
+        const index = masteryStore[subtopic].weaknesses.indexOf(item);
+        if (index > -1) {
+            masteryStore[subtopic].weaknesses.splice(index, 1);
+        }
+    }
+
+    // Add new weaknesses (avoid duplicates)
+    for (const item of weak) {
+        if (!masteryStore[subtopic].weaknesses.includes(item)) {
+            masteryStore[subtopic].weaknesses.push(item);
+        }
+    }
   }
 
   return diff;
@@ -144,48 +171,54 @@ function getRecommendations({
   masteredThreshold = 1.0,
   topN,
 } = {}) {
-  // Determine candidate pool
+
   let candidates = subtopics ?? Object.keys(masteryStore);
 
-  // If no subtopics tracked yet, return empty
   if (candidates.length === 0) {
     return {};
   }
 
-  // Filter out exclusions and mastered topics
   candidates = candidates.filter((s) => {
     if (exclude.includes(s)) return false;
-    if (getScore(s) >= masteredThreshold) return false;
+    if (!masteryStore[s]) return false;
+    if (masteryStore[s].score >= masteredThreshold) return false;
     return true;
   });
 
   if (candidates.length === 0) {
-    return {"mastered": True}; // Everything is mastered
+    return { mastered: true };
   }
 
-  // Compute focus weight: inverse of mastery score
-  // A subtopic at 0.0 gets max weight; at 1.0 gets weight 0.
-  // We add a small epsilon so fully-unknown topics don't dominate infinitely.
   const EPSILON = 0.05;
+
   let weighted = candidates.map((s) => {
-    const mastery = getScore(s);
-    const focusWeight = (1 - mastery) + EPSILON;
-    return { subtopic: s, mastery, focusWeight };
+    const mastery = masteryStore[s].score;
+    const focusWeight = (1 - mastery) ** 3 + EPSILON;
+
+    return {
+      subtopic: s,
+      mastery,
+      weaknesses: masteryStore[s].weaknesses ?? [],
+      focusWeight,
+    };
   });
 
-  // Sort weakest first
   weighted.sort((a, b) => a.mastery - b.mastery);
 
-  // Apply topN cap
   if (topN && topN > 0) {
     weighted = weighted.slice(0, topN);
   }
 
-  // Normalise to percentages
   const totalWeight = weighted.reduce((sum, w) => sum + w.focusWeight, 0);
+
   const result = {};
-  for (const { subtopic, focusWeight } of weighted) {
-    result[subtopic] = `${Math.round((focusWeight / totalWeight) * 100)}%`;
+
+  for (const { subtopic, focusWeight, mastery, weaknesses } of weighted) {
+    result[subtopic] = {
+      focus: `${Math.round((focusWeight / totalWeight) * 100)}%`,
+      mastery: round(mastery),
+      weaknesses: [...weaknesses], // shallow copy for safety
+    };
   }
 
   return result;
@@ -219,25 +252,27 @@ module.exports = { updateMastery, getRecommendations, exportStore, importStore, 
 // USAGE EXAMPLES (remove in production)
 // ══════════════════════════════════════════════════════════════════════════════
 
-/*
 
-const { updateMastery, getRecommendations, exportStore, importStore } = require('./mastery');
+
+// const { updateMastery, getRecommendations, exportStore, importStore } = require('./mastery');
 
 // ── Example 1: Student answers a question about balanced + full binary trees
 //    They got it partially right (60% correct)
 console.log(updateMastery({
-  subtopics: ["binary_trees.balanced", "binary_trees.full"],
+  subtopics: {"binary_trees.balanced": {improved: [], weak: ["doesn't understand which ranges are balanced"]}, "binary_trees.full": {improved: [], weak: ["incorrectly understanding of if tree was full or not"]}},
   outcome: "partial",
-  correctness: 0.6,
+  correctness: 0.6
 }));
-// → { "binary_trees.balanced": { before: 0, after: 0.039 },
-//     "binary_trees.full":     { before: 0, after: 0.039 } }
+
 
 
 // ── Example 2: Student nails a question covering complete + perfect trees
-updateMastery({ subtopics: ["binary_trees.complete", "binary_trees.perfect"], outcome: "correct" });
-updateMastery({ subtopics: ["binary_trees.complete", "binary_trees.perfect"], outcome: "correct" });
-updateMastery({ subtopics: ["binary_trees.complete", "binary_trees.perfect"], outcome: "correct" });
+updateMastery({ subtopics: {"binary_trees.complete": {improved: ["fjak"], weak:[]}, "binary_trees.perfect": {improved: [], weak:[]}}, outcome: "correct" });
+updateMastery({ subtopics: {"binary_trees.complete": {improved: [], weak:[]}, "binary_trees.perfect": {improved: [], weak:[]}}, outcome: "correct" });
+
+
+console.log(masteryStore)
+
 
 
 // ── Example 3: Get recommendations for a specific topic
@@ -257,14 +292,12 @@ console.log(getRecommendations({
 //   }
 
 
-// ── Example 4: Get global recommendations across everything tracked
-console.log(getRecommendations());
 
 
 // ── Example 5: Only return top 3 weakest subtopics
 console.log(getRecommendations({ topN: 3 }));
 
-
+/*
 // ── Example 6: Persist and restore
 const saved = exportStore();
 // ... save to DB/file/localStorage ...
