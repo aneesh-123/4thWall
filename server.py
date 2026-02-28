@@ -6,6 +6,7 @@ Routes:
   POST /api/extract   Accept a PDF, call OpenAI, return the study plan.
   POST /chat/turn     Conversational tutor with persistent Supermemory.
 """
+from __future__ import annotations
 
 import logging
 import os
@@ -55,6 +56,10 @@ from memory_extract import (
 )
 from memory_update import apply_extract_to_profile, build_memory_preview, update_mastery
 from pdf_retriever import build_index, retrieve, format_retrieved_chunks
+from recommendation_engine import recommend_next_for_chat_turn, get_recommendations_dict
+from grading_engine import grade as grade_submission
+from hint_engine import generate_hint, generate_all_hints, stream_hints, validate_hint_request
+from test_engine import generate_test, grade_test, get_difficulty_level
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -423,7 +428,19 @@ def chat_turn():
         logger.error("add_event failed: %s", exc)
         # Non-fatal
 
-    # ── Step 6: build response ────────────────────────────────────────────────
+    # ── Step 6: get recommendations for next concepts ────────────────────────
+    current_concepts = [c["concept_id"] for c in extract.get("concepts", [])]
+    try:
+        recommendations = recommend_next_for_chat_turn(
+            updated_profile,
+            current_concept=current_concepts[0] if current_concepts else None,
+            top_n=3,
+        )
+    except Exception as exc:
+        logger.error("Recommendation failed: %s", exc)
+        recommendations = {"next_concepts": [], "next_template": "lesson"}
+
+    # ── Step 7: build response ────────────────────────────────────────────────
     memory_preview = build_memory_preview(updated_profile)
 
     return jsonify({
@@ -431,6 +448,7 @@ def chat_turn():
         "session_id":     session_id,
         "assistant":      assistant_reply,
         "memory_preview": memory_preview,
+        "recommendations": recommendations,
         "doc_found":      doc_ctx is not None,
         "sm_grounded":    bool(semantic_passages),
     })
@@ -692,6 +710,343 @@ def knowledge_graph(learner_id: str):
         "nodes":      graph["nodes"],
         "links":      graph["links"],
     })
+
+
+# ── Grading endpoint ─────────────────────────────────────────────────────────
+
+@app.route("/api/grade", methods=["POST"])
+def grade_answer():
+    """
+    POST /api/grade
+    Body: {
+      learner_id?: string,
+      question_text: string,
+      topic: string,
+      submission: string,
+      mode?: "informal" | "formal" (default: "informal"),
+      concept_context?: string
+    }
+    Returns: transparent grading result with rubric, per-criterion breakdown,
+             outcome, sources, and mastery update.
+    """
+    body = request.get_json(silent=True) or {}
+
+    submission    = (body.get("submission") or "").strip()
+    question_text = (body.get("question_text") or "").strip()
+    topic         = (body.get("topic") or "").strip()
+    mode          = (body.get("mode") or "informal").strip().lower()
+    learner_id    = (body.get("learner_id") or "").strip() or None
+    concept_ctx   = (body.get("concept_context") or "").strip()
+
+    if not submission:
+        return jsonify({"error": "submission is required"}), 400
+    if not question_text:
+        return jsonify({"error": "question_text is required"}), 400
+    if not topic:
+        return jsonify({"error": "topic is required"}), 400
+    if mode not in ("informal", "formal"):
+        mode = "informal"
+
+    # Load mastery context if learner_id provided
+    mastery_ctx = ""
+    if learner_id:
+        mem = get_memory_client()
+        try:
+            profile = mem.get_profile(learner_id)
+            mastery_ctx = build_profile_context_string(profile)
+        except Exception:
+            pass
+
+    try:
+        result = grade_submission(
+            submission=submission,
+            topic=topic,
+            question_text=question_text,
+            mode=mode,
+            concept_context=concept_ctx,
+            mastery_context=mastery_ctx,
+        )
+    except Exception as exc:
+        logger.error("Grade endpoint failed: %s", exc)
+        return jsonify({"error": f"Grading error: {exc}"}), 500
+
+    # Update mastery if learner_id provided
+    mastery_update = None
+    if learner_id:
+        outcome = result.get("outcome", "partial")
+        concept_id = topic.lower().replace(" ", "_")
+        try:
+            mem = get_memory_client()
+            profile = mem.get_profile(learner_id)
+            concepts_node = profile.setdefault("concepts", {})
+            entry = concepts_node.get(concept_id)
+            now = datetime.now(timezone.utc).isoformat()
+            if entry is None:
+                entry = {
+                    "mastery": 0.0, "attempts": 0, "correct_attempts": 0,
+                    "last_seen": now, "last_outcome": outcome, "error_pattern": "",
+                }
+                concepts_node[concept_id] = entry
+            before = entry["mastery"]
+            entry["mastery"]          = update_mastery(entry["mastery"], outcome)
+            entry["attempts"]        += 1
+            entry["correct_attempts"] += (1 if outcome == "correct" else 0)
+            entry["last_seen"]        = now
+            entry["last_outcome"]     = outcome
+            profile["updated_at"]     = now
+            mem.put_profile(learner_id, profile)
+            mastery_update = {
+                concept_id: {"before": round(before, 3), "after": round(entry["mastery"], 3)}
+            }
+        except Exception as exc:
+            logger.error("Grade mastery update failed: %s", exc)
+
+    result["mastery_update"] = mastery_update
+    logger.info("Graded: topic=%s mode=%s outcome=%s score=%.1f",
+                topic, mode, result.get("outcome"), result.get("overall_score", 0))
+    return jsonify(result)
+
+
+# ── Recommendation endpoint ──────────────────────────────────────────────────
+
+@app.route("/api/recommend", methods=["POST"])
+def recommend():
+    """
+    POST /api/recommend
+    Body: { learner_id: string, top_n?: int }
+    Returns: ranked study recommendations from the cubic power law engine.
+    """
+    body       = request.get_json(silent=True) or {}
+    learner_id = (body.get("learner_id") or "").strip()
+    top_n      = max(1, min(10, int(body.get("top_n", 5))))
+
+    if not learner_id:
+        return jsonify({"error": "learner_id is required"}), 400
+
+    mem = get_memory_client()
+    try:
+        profile = mem.get_profile(learner_id)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+    result = get_recommendations_dict(profile, top_n=top_n)
+    result["learner_id"] = learner_id
+    return jsonify(result)
+
+
+# ── Adaptive test endpoints ──────────────────────────────────────────────────
+
+@app.route("/api/test/generate", methods=["POST"])
+def test_generate():
+    """
+    POST /api/test/generate
+    Body: {
+      topic: string,
+      learner_id?: string,
+      num_questions?: int (default 5, max 10),
+      concept_context?: string
+    }
+    Returns: adaptive test with mixed objective + subjective questions,
+             difficulty scaled to learner's mastery.
+    """
+    body          = request.get_json(silent=True) or {}
+    topic         = (body.get("topic") or "").strip()
+    learner_id    = (body.get("learner_id") or "").strip() or None
+    num_questions = max(1, min(10, int(body.get("num_questions", 5))))
+    concept_ctx   = (body.get("concept_context") or "").strip()
+
+    if not topic:
+        return jsonify({"error": "topic is required"}), 400
+
+    # Look up mastery if learner_id provided
+    mastery = 0.0
+    if learner_id:
+        mem = get_memory_client()
+        try:
+            profile = mem.get_profile(learner_id)
+            concept_id = topic.lower().replace(" ", "_")
+            entry = profile.get("concepts", {}).get(concept_id)
+            if entry:
+                mastery = entry.get("mastery", 0.0)
+        except Exception:
+            pass
+
+    try:
+        test = generate_test(
+            topic=topic,
+            num_questions=num_questions,
+            mastery=mastery,
+            concept_context=concept_ctx,
+        )
+    except Exception as exc:
+        logger.error("Test generation failed: %s", exc)
+        return jsonify({"error": f"Test generation error: {exc}"}), 500
+
+    test["learner_id"] = learner_id
+    test["learner_mastery"] = round(mastery, 3)
+
+    logger.info("Test generated: topic=%s difficulty=%s n=%d mastery=%.2f",
+                topic, test["difficulty"], test["num_questions"], mastery)
+    return jsonify(test)
+
+
+@app.route("/api/test/submit", methods=["POST"])
+def test_submit():
+    """
+    POST /api/test/submit
+    Body: {
+      test: { test_id, topic, questions: [...] },
+      responses: [{ question_id, answer }, ...],
+      learner_id?: string
+    }
+    Returns: grading result with per-question scores, aggregate outcome,
+             and mastery update if learner_id provided.
+    """
+    body       = request.get_json(silent=True) or {}
+    test_data  = body.get("test", {})
+    responses  = body.get("responses", [])
+    learner_id = (body.get("learner_id") or "").strip() or None
+    topic      = (test_data.get("topic") or "").strip()
+
+    if not test_data.get("questions"):
+        return jsonify({"error": "test with questions is required"}), 400
+    if not responses:
+        return jsonify({"error": "responses are required"}), 400
+
+    try:
+        result = grade_test(test_data, responses, topic=topic)
+    except Exception as exc:
+        logger.error("Test grading failed: %s", exc)
+        return jsonify({"error": f"Test grading error: {exc}"}), 500
+
+    # Update mastery if learner_id provided
+    mastery_update = None
+    if learner_id and topic:
+        concept_id = topic.lower().replace(" ", "_")
+        outcome = result.get("outcome", "partial")
+        try:
+            mem = get_memory_client()
+            profile = mem.get_profile(learner_id)
+            concepts_node = profile.setdefault("concepts", {})
+            now = datetime.now(timezone.utc).isoformat()
+            entry = concepts_node.get(concept_id)
+            if entry is None:
+                entry = {
+                    "mastery": 0.0, "attempts": 0, "correct_attempts": 0,
+                    "last_seen": now, "last_outcome": outcome, "error_pattern": "",
+                }
+                concepts_node[concept_id] = entry
+            before = entry["mastery"]
+            entry["mastery"]          = update_mastery(entry["mastery"], outcome)
+            entry["attempts"]        += 1
+            entry["correct_attempts"] += (1 if outcome == "correct" else 0)
+            entry["last_seen"]        = now
+            entry["last_outcome"]     = outcome
+            profile["updated_at"]     = now
+            mem.put_profile(learner_id, profile)
+            mastery_update = {
+                concept_id: {"before": round(before, 3), "after": round(entry["mastery"], 3)}
+            }
+        except Exception as exc:
+            logger.error("Test mastery update failed: %s", exc)
+
+    result["mastery_update"] = mastery_update
+    result["learner_id"] = learner_id
+
+    logger.info("Test submitted: topic=%s outcome=%s score=%.1f%%",
+                topic, result.get("outcome"), result.get("score_pct", 0))
+    return jsonify(result)
+
+
+# ── Hint endpoints ───────────────────────────────────────────────────────────
+
+@app.route("/api/hint", methods=["POST"])
+def hint_single():
+    """
+    POST /api/hint
+    Body: {
+      question_text: string,
+      level?: 1|2|3 (default: 1),
+      topic?: string,
+      student_answer?: string,
+      concept_context?: string,
+      previous_hints?: [string]
+    }
+    Returns: { level, hint_text, can_request_next, topic }
+    """
+    body = request.get_json(silent=True) or {}
+
+    ok, err = validate_hint_request(body)
+    if not ok:
+        return jsonify({"error": err}), 400
+
+    result = generate_hint(
+        question_text=(body.get("question_text") or "").strip(),
+        level=int(body.get("level", 1)),
+        topic=(body.get("topic") or "").strip(),
+        student_answer=(body.get("student_answer") or "").strip(),
+        concept_context=(body.get("concept_context") or "").strip(),
+        previous_hints=body.get("previous_hints"),
+    )
+
+    logger.info("Hint generated: topic=%s level=%d", result["topic"], result["level"])
+    return jsonify(result)
+
+
+@app.route("/api/hint/all", methods=["POST"])
+def hint_all():
+    """
+    POST /api/hint/all
+    Body: { question_text: string, topic?: string, student_answer?: string, concept_context?: string }
+    Returns: { hints: [{level, hint_text, can_request_next, topic}, ...] }
+
+    Generates all 3 hint levels at once (non-streaming).
+    """
+    body = request.get_json(silent=True) or {}
+
+    question_text = (body.get("question_text") or "").strip()
+    if not question_text:
+        return jsonify({"error": "question_text is required"}), 400
+
+    hints = generate_all_hints(
+        question_text=question_text,
+        topic=(body.get("topic") or "").strip(),
+        student_answer=(body.get("student_answer") or "").strip(),
+        concept_context=(body.get("concept_context") or "").strip(),
+    )
+
+    logger.info("All hints generated: topic=%s count=%d", body.get("topic", ""), len(hints))
+    return jsonify({"hints": hints})
+
+
+@app.route("/api/hint/stream", methods=["POST"])
+def hint_stream():
+    """
+    POST /api/hint/stream
+    Body: { question_text: string, topic?: string, student_answer?: string, concept_context?: string }
+    Returns: SSE stream of hint events.
+
+    Each event: data: {"level": N, "hint_text": "...", "can_request_next": bool}\n\n
+    Final event: data: {"done": true}\n\n
+    """
+    from flask import Response
+
+    body = request.get_json(silent=True) or {}
+
+    question_text = (body.get("question_text") or "").strip()
+    if not question_text:
+        return jsonify({"error": "question_text is required"}), 400
+
+    def event_generator():
+        yield from stream_hints(
+            question_text=question_text,
+            topic=(body.get("topic") or "").strip(),
+            student_answer=(body.get("student_answer") or "").strip(),
+            concept_context=(body.get("concept_context") or "").strip(),
+        )
+
+    logger.info("Hint stream started: topic=%s", body.get("topic", ""))
+    return Response(event_generator(), mimetype="text/event-stream")
 
 
 if __name__ == "__main__":
