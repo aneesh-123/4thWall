@@ -141,6 +141,57 @@ In LLM mode the heuristic pipeline is bypassed; each section is sent as a struct
 
 ---
 
+---
+
+## Knowledge Graph  (`concepts_to_graph.py`)
+
+Converts `concepts.json` into a prerequisite DAG — no API calls required.
+
+```bash
+python concepts_to_graph.py --input out/concepts.json --outdir out
+```
+
+| Output file | Description |
+|---|---|
+| `out/graph.json` | Nodes + directed edges as JSON |
+| `out/graph.md` | Human-readable listing with prerequisites |
+| `out/graph.png` | Hierarchical visualisation (NetworkX + matplotlib) |
+
+### graph.json schema
+
+```json
+{
+  "nodes": [
+    {
+      "id": "n000",
+      "label": "Introduction to Sorting",
+      "description": "Brief notes…",
+      "keywords": ["sort", "algorithm"],
+      "topic": "Sorting Algorithms",
+      "difficulty": "easy",
+      "pages": [1, 2]
+    }
+  ],
+  "edges": [
+    { "from_id": "n000", "to_id": "n001", "type": "prerequisite" }
+  ]
+}
+```
+
+### How difficulty is assigned
+
+1. **Keyword match** — words like *introduction*, *overview*, *definition* → easy; *advanced*, *proof*, *asymptotic*, *NP* → hard.
+2. **Positional fallback** — first third of subtopics → easy; middle → medium; final third → hard.
+
+### How prerequisite edges are inferred
+
+1. Each **medium** node links its top-2 keyword-similar **easy** nodes as prerequisites.
+2. Each **hard** node links its top-2 keyword-similar **medium** nodes (or easy if none).
+3. **Hard** nodes form a sequential chain by order of appearance.
+4. **Transitive reduction** via NetworkX removes redundant edges to keep the graph clean.
+
+---
+
 ## Tuning knobs
 
 | Problem | Fix |

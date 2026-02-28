@@ -75,37 +75,6 @@
     }
     #fileInfo .remove-btn:hover { color: #e53e3e; }
 
-    /* ── Options ── */
-    .options { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
-
-    .toggle-row {
-      display: flex; align-items: center; gap: 10px;
-    }
-    .toggle-label { font-size: 0.88rem; color: #555; }
-    .toggle-label strong { color: #1a1a1a; }
-
-    /* Toggle switch */
-    .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-      position: absolute; inset: 0; background: #ccc;
-      border-radius: 22px; cursor: pointer; transition: background 0.2s;
-    }
-    .slider::before {
-      content: ""; position: absolute;
-      width: 16px; height: 16px; left: 3px; bottom: 3px;
-      background: #fff; border-radius: 50%; transition: transform 0.2s;
-    }
-    input:checked + .slider { background: #4f46e5; }
-    input:checked + .slider::before { transform: translateX(18px); }
-
-    .select-row { display: flex; align-items: center; gap: 8px; }
-    .select-row label { font-size: 0.88rem; color: #555; }
-    select {
-      border: 1px solid #ccc; border-radius: 6px;
-      padding: 4px 8px; font-size: 0.85rem; background: #fff;
-    }
-
     /* ── Button ── */
     #processBtn {
       display: block; width: 100%; margin-top: 20px;
@@ -149,7 +118,7 @@
       border: 1px solid #e0e0e0;
       border-radius: 10px;
       overflow: hidden;
-      margin-bottom: 20px;
+      margin-bottom: 0;
     }
     .stat {
       flex: 1; padding: 14px 20px;
@@ -159,6 +128,23 @@
     .stat:last-child { border-right: none; }
     .stat .num { font-size: 1.6rem; font-weight: 700; color: #4f46e5; }
     .stat .lbl { font-size: 0.75rem; color: #888; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin: 20px 0 0;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    .tab-btn {
+      background: none; border: none; cursor: pointer;
+      padding: 9px 20px; font-size: 0.88rem; font-weight: 600;
+      color: #888; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { color: #4f46e5; }
+    .tab-btn.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+    .tab-content { padding-top: 20px; }
 
     /* ── Download ── */
     #downloadBtn {
@@ -173,15 +159,16 @@
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
+      margin-bottom: 12px;
     }
     #downloadBtn:hover { background: #e0e0ff; }
 
     /* ── Markdown output ── */
     #mdOutput {
-      display: none;
       line-height: 1.75;
       font-size: 0.92rem;
       color: #222;
+      clear: both;
     }
     #mdOutput h1 { font-size: 1.4rem; margin-bottom: 6px; }
     #mdOutput h2 { font-size: 1.15rem; margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 2px solid #f0f0f0; color: #333; }
@@ -198,6 +185,103 @@
     #mdOutput strong { color: #111; }
     #mdOutput em { color: #666; font-size: 0.88rem; }
     #mdOutput hr { border: none; border-top: 1px solid #eee; margin: 20px 0; }
+
+    /* ── Graph legend ── */
+    #graphLegend {
+      display: flex;
+      gap: 18px;
+      margin-bottom: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #444;
+    }
+    .legend-dot {
+      width: 13px; height: 13px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .legend-hint {
+      margin-left: auto;
+      font-size: 0.78rem;
+      color: #aaa;
+      font-style: italic;
+    }
+
+    /* ── Graph container ── */
+    #graphWrapper {
+      overflow: auto;
+      border-radius: 10px;
+      background: #f0f3ff;
+    }
+    #graphContainer {
+      position: relative;
+      background: #f0f3ff;
+    }
+    #graphSvg {
+      position: absolute;
+      top: 0; left: 0;
+      pointer-events: none;
+      overflow: visible;
+    }
+    .gnode {
+      position: absolute;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 6px 10px;
+      cursor: default;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      line-height: 1.3;
+      transition: transform 0.15s, box-shadow 0.15s;
+      user-select: none;
+    }
+
+    /* ── Tooltip ── */
+    #nodeTooltip {
+      display: none;
+      position: fixed;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 14px 18px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+      max-width: 300px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #tooltipTitle {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+      color: #1a1a1a;
+    }
+    #tooltipList {
+      margin: 0;
+      padding-left: 16px;
+      list-style: disc;
+    }
+    #tooltipList li {
+      margin-bottom: 6px;
+      font-size: 0.82rem;
+      color: #333;
+    }
+    #tooltipList li span {
+      color: #666;
+      font-size: 0.79rem;
+      display: block;
+      margin-top: 2px;
+    }
   </style>
 </head>
 <body>
@@ -240,20 +324,60 @@
 
   <!-- Results -->
   <div class="card" id="resultsCard" style="display:none">
+
+    <!-- Stats bar -->
     <div id="statsBar" style="display:flex">
       <div class="stat"><div class="num" id="statPages">—</div><div class="lbl">Pages</div></div>
       <div class="stat"><div class="num" id="statTopics">—</div><div class="lbl">Topics</div></div>
       <div class="stat"><div class="num" id="statConcepts">—</div><div class="lbl">Subtopics</div></div>
     </div>
-    <a id="downloadBtn" download="study_plan.md">⬇ Download study_plan.md</a>
-    <div id="mdOutput"></div>
-  </div>
 
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="plan">Study Plan</button>
+      <button class="tab-btn"        data-tab="graph">Knowledge Graph</button>
+    </div>
+
+    <!-- Study Plan tab -->
+    <div id="tabPlan" class="tab-content">
+      <a id="downloadBtn" download="study_plan.md">⬇ Download study_plan.md</a>
+      <div id="mdOutput"></div>
+    </div>
+
+    <!-- Knowledge Graph tab -->
+    <div id="tabGraph" class="tab-content" style="display:none">
+      <div id="graphLegend">
+        <span class="legend-item">
+          <span class="legend-dot" style="background:#6fcf97"></span>Easy
+        </span>
+        <span class="legend-item">
+          <span class="legend-dot" style="background:#f2c94c"></span>Medium
+        </span>
+        <span class="legend-item">
+          <span class="legend-dot" style="background:#eb5757"></span>Hard
+        </span>
+        <span class="legend-hint">Hover a node to see subtopics</span>
+      </div>
+      <div id="graphWrapper">
+        <div id="graphContainer">
+          <svg id="graphSvg"></svg>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /resultsCard -->
+
+</div><!-- /page -->
+
+<!-- Tooltip (fixed position, outside card flow) -->
+<div id="nodeTooltip">
+  <div id="tooltipTitle"></div>
+  <ul id="tooltipList"></ul>
 </div>
 
-<!-- marked.js for client-side markdown rendering -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
+  // ── Element refs ──────────────────────────────────────────────────────────────
   const dropZone    = document.getElementById("dropZone");
   const pdfInput    = document.getElementById("pdfInput");
   const browseLink  = document.getElementById("browseLink");
@@ -267,10 +391,12 @@
   const statsBar    = document.getElementById("statsBar");
   const downloadBtn = document.getElementById("downloadBtn");
   const mdOutput    = document.getElementById("mdOutput");
+  const tooltip     = document.getElementById("nodeTooltip");
 
-  let selectedFile = null;
+  let selectedFile     = null;
+  let currentGraphData = null;
 
-  // ── File selection ──────────────────────────────────────────────────────────
+  // ── File selection ────────────────────────────────────────────────────────────
   browseLink.addEventListener("click", () => pdfInput.click());
   pdfInput.addEventListener("change", () => {
     if (pdfInput.files[0]) setFile(pdfInput.files[0]);
@@ -284,8 +410,8 @@
     processBtn.disabled = true;
   });
 
-  // ── Drag & drop ─────────────────────────────────────────────────────────────
-  dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+  // ── Drag & drop ───────────────────────────────────────────────────────────────
+  dropZone.addEventListener("dragover",  e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
   dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
   dropZone.addEventListener("drop", e => {
     e.preventDefault();
@@ -305,7 +431,7 @@
     hideResults();
   }
 
-  // ── Process ─────────────────────────────────────────────────────────────────
+  // ── Process ──────────────────────────────────────────────────────────────────
   processBtn.addEventListener("click", async () => {
     if (!selectedFile) return;
 
@@ -333,7 +459,7 @@
     }
   });
 
-  // ── UI helpers ───────────────────────────────────────────────────────────────
+  // ── UI helpers ────────────────────────────────────────────────────────────────
   function showLoading() {
     loading.style.display = "block";
     processBtn.disabled = true;
@@ -355,19 +481,187 @@
     document.getElementById("statConcepts").textContent = data.subtopics_count;
     statsBar.style.display = "flex";
 
-    // Render markdown
     mdOutput.innerHTML = marked.parse(data.markdown);
-    mdOutput.style.display = "block";
 
-    // Download link
     const blob = new Blob([data.markdown], { type: "text/markdown" });
     downloadBtn.href = URL.createObjectURL(blob);
     downloadBtn.style.display = "inline-block";
 
+    currentGraphData = data.graph || null;
+
     resultsCard.style.display = "block";
+    switchTab("plan");
     resultsCard.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  function hideResults() { resultsCard.style.display = "none"; }
+
+  function hideResults() {
+    resultsCard.style.display = "none";
+    currentGraphData = null;
+  }
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────────
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+  });
+
+  function switchTab(name) {
+    document.querySelectorAll(".tab-btn").forEach(b =>
+      b.classList.toggle("active", b.dataset.tab === name)
+    );
+    document.getElementById("tabPlan").style.display  = name === "plan"  ? "block" : "none";
+    document.getElementById("tabGraph").style.display = name === "graph" ? "block" : "none";
+    if (name === "graph") renderGraph(currentGraphData);
+  }
+
+  // ── Knowledge Graph ───────────────────────────────────────────────────────────
+  const DIFF_COLORS = { easy: "#6fcf97", medium: "#f2c94c", hard: "#eb5757" };
+  const NODE_W = 155, NODE_H = 56, GAP_X = 22, GAP_Y = 88, PAD = 32;
+
+  function renderGraph(graphData) {
+    const container = document.getElementById("graphContainer");
+    const svg       = document.getElementById("graphSvg");
+
+    container.querySelectorAll(".gnode").forEach(el => el.remove());
+    svg.innerHTML = "";
+
+    if (!graphData || !graphData.nodes || graphData.nodes.length === 0) {
+      container.style.width  = "100%";
+      container.style.height = "120px";
+      container.innerHTML   += '<p style="text-align:center;padding:40px;color:#aaa;font-size:0.9rem">No graph data.</p>';
+      return;
+    }
+
+    const { nodes, edges } = graphData;
+
+    // ── Topological tiers via BFS ──
+    const inDeg = Object.fromEntries(nodes.map(n => [n.id, 0]));
+    const adj   = Object.fromEntries(nodes.map(n => [n.id, []]));
+    edges.forEach(e => { inDeg[e.to_id]++; adj[e.from_id].push(e.to_id); });
+
+    const tierOf  = {};
+    const visited = new Set();
+    let frontier  = nodes.filter(n => inDeg[n.id] === 0).map(n => n.id);
+    if (!frontier.length) frontier = [nodes[0].id]; // cycle fallback
+
+    let tier = 0;
+    while (frontier.length) {
+      frontier.forEach(id => { if (!(id in tierOf)) { tierOf[id] = tier; visited.add(id); } });
+      const next = new Set();
+      frontier.forEach(id => adj[id].forEach(nb => { if (!visited.has(nb)) next.add(nb); }));
+      frontier = [...next];
+      tier++;
+    }
+    nodes.forEach(n => { if (!(n.id in tierOf)) tierOf[n.id] = tier++; });
+
+    // ── Group nodes by tier ──
+    const groups = {};
+    nodes.forEach(n => {
+      const t = tierOf[n.id] ?? 0;
+      if (!groups[t]) groups[t] = [];
+      groups[t].push(n);
+    });
+
+    const numTiers  = Object.keys(groups).length;
+    const maxPerRow = Math.max(...Object.values(groups).map(g => g.length));
+    const svgW = PAD * 2 + maxPerRow * NODE_W + (maxPerRow - 1) * GAP_X;
+    const svgH = PAD * 2 + numTiers  * NODE_H + (numTiers  - 1) * GAP_Y;
+
+    container.style.width  = svgW + "px";
+    container.style.height = svgH + "px";
+    svg.setAttribute("width",   svgW);
+    svg.setAttribute("height",  svgH);
+    svg.setAttribute("viewBox", `0 0 ${svgW} ${svgH}`);
+
+    // Arrowhead marker
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    defs.innerHTML = `<marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#b0b0c0"/>
+    </marker>`;
+    svg.appendChild(defs);
+
+    // ── Compute node positions ──
+    const pos = {};
+    Object.entries(groups)
+      .sort((a, b) => +a[0] - +b[0])
+      .forEach(([t, tNodes]) => {
+        const y    = PAD + parseInt(t) * (NODE_H + GAP_Y);
+        const rowW = tNodes.length * NODE_W + (tNodes.length - 1) * GAP_X;
+        const x0   = (svgW - rowW) / 2;
+        tNodes.forEach((n, i) => {
+          const x = x0 + i * (NODE_W + GAP_X);
+          pos[n.id] = { x, y, cx: x + NODE_W / 2, cy: y + NODE_H / 2 };
+        });
+      });
+
+    // ── Draw edges ──
+    edges.forEach(e => {
+      const a = pos[e.from_id], b = pos[e.to_id];
+      if (!a || !b) return;
+      const x1 = a.cx, y1 = a.y + NODE_H;
+      const x2 = b.cx, y2 = b.y;
+      const midY = (y1 + y2) / 2;
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`);
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", "#c0c0d0");
+      path.setAttribute("stroke-width", "1.8");
+      path.setAttribute("marker-end", "url(#arr)");
+      svg.appendChild(path);
+    });
+
+    // ── Draw nodes ──
+    nodes.forEach(n => {
+      const p = pos[n.id];
+      if (!p) return;
+
+      const el = document.createElement("div");
+      el.className        = "gnode";
+      el.style.left       = p.x + "px";
+      el.style.top        = p.y + "px";
+      el.style.width      = NODE_W + "px";
+      el.style.height     = NODE_H + "px";
+      el.style.background = DIFF_COLORS[n.difficulty] || "#ddd";
+      el.textContent      = n.label.length > 26 ? n.label.slice(0, 24) + "…" : n.label;
+
+      el.addEventListener("mouseenter", evt => {
+        el.style.transform = "scale(1.07)";
+        el.style.boxShadow = "0 4px 18px rgba(0,0,0,0.18)";
+        document.getElementById("tooltipTitle").textContent = n.label;
+        const list = document.getElementById("tooltipList");
+        list.innerHTML = (n.subtopics || []).map(st =>
+          `<li><strong>${escHtml(st.name)}</strong>${
+            st.notes ? `<span>${escHtml(st.notes)}</span>` : ""
+          }</li>`
+        ).join("");
+        tooltip.style.display = "block";
+        positionTooltip(evt);
+      });
+      el.addEventListener("mousemove",  positionTooltip);
+      el.addEventListener("mouseleave", () => {
+        el.style.transform = "";
+        el.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)";
+        tooltip.style.display = "none";
+      });
+
+      container.appendChild(el);
+    });
+  }
+
+  function positionTooltip(evt) {
+    const x  = evt.clientX + 16;
+    const y  = evt.clientY - 10;
+    const tw = tooltip.offsetWidth  || 0;
+    const th = tooltip.offsetHeight || 0;
+    tooltip.style.left = Math.min(x, window.innerWidth  - tw - 12) + "px";
+    tooltip.style.top  = Math.max(8, Math.min(y, window.innerHeight - th - 8)) + "px";
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
 </script>
 </body>
 </html>

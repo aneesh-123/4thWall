@@ -1,0 +1,210 @@
+{
+  "nodes": [
+    {
+      "id": "n000",
+      "label": "Can explain Ricart-Agrawala Algorithm",
+      "description": "The Ricart-Agrawala Algorithm is a distributed mutual exclusion algorithm that uses Lamport timestamps to order requests for critical section access.",
+      "keywords": [
+        "algorithm",
+        "ricart-agrawala",
+        "explain",
+        "distributed",
+        "mutual",
+        "exclusion"
+      ],
+      "topic": "Mutual Exclusion in Distributed Systems",
+      "difficulty": "easy",
+      "pages": [
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "id": "n001",
+      "label": "Can analyze bandwidth usage of Ricart-Agrawala",
+      "description": "The Ricart-Agrawala Algorithm has a bandwidth usage of 2*(N-1) messages per enter operation, which can be high for large N.",
+      "keywords": [
+        "bandwidth",
+        "usage",
+        "ricart-agrawala",
+        "analyze",
+        "algorithm",
+        "messages"
+      ],
+      "topic": "Mutual Exclusion in Distributed Systems",
+      "difficulty": "easy",
+      "pages": [
+        7,
+        25
+      ]
+    },
+    {
+      "id": "n002",
+      "label": "Can explain Maekawa's Algorithm",
+      "description": "Maekawa's Algorithm reduces the number of replies needed for mutual exclusion by using voting sets, allowing only a subset of processes to grant permission.",
+      "keywords": [
+        "maekawa's",
+        "algorithm",
+        "explain",
+        "reduces",
+        "number",
+        "replies"
+      ],
+      "topic": "Mutual Exclusion in Distributed Systems",
+      "difficulty": "easy",
+      "pages": [
+        9,
+        10,
+        12
+      ]
+    },
+    {
+      "id": "n003",
+      "label": "Can identify safety in Maekawa's Algorithm",
+      "description": "Safety in Maekawa's Algorithm is ensured because a process can only receive replies from its voting set, preventing multiple processes from entering the critical section simultaneously.",
+      "keywords": [
+        "safety",
+        "maekawa's",
+        "algorithm",
+        "identify",
+        "ensured",
+        "because"
+      ],
+      "topic": "Mutual Exclusion in Distributed Systems",
+      "difficulty": "medium",
+      "pages": [
+        19,
+        21
+      ]
+    },
+    {
+      "id": "n004",
+      "label": "Can analyze performance of Maekawa's Algorithm",
+      "description": "Maekawa's Algorithm has improved bandwidth usage compared to Ricart-Agrawala, with O(√N) messages per enter operation, making it more efficient for large systems.",
+      "keywords": [
+        "maekawa's",
+        "algorithm",
+        "analyze",
+        "performance",
+        "improved",
+        "bandwidth"
+      ],
+      "topic": "Mutual Exclusion in Distributed Systems",
+      "difficulty": "medium",
+      "pages": [
+        18,
+        25
+      ]
+    },
+    {
+      "id": "n005",
+      "label": "Can explain leader election in distributed systems",
+      "description": "Leader election is a process in distributed systems to select a single process as the coordinator or leader among a group of processes.",
+      "keywords": [
+        "leader",
+        "election",
+        "distributed",
+        "systems",
+        "process",
+        "explain"
+      ],
+      "topic": "Mutual Exclusion in Distributed Systems",
+      "difficulty": "hard",
+      "pages": [
+        26,
+        29
+      ]
+    },
+    {
+      "id": "n006",
+      "label": "Can describe the Ring Election Algorithm",
+      "description": "The Ring Election Algorithm organizes processes in a logical ring and uses message passing to elect a leader based on attributes.",
+      "keywords": [
+        "ring",
+        "election",
+        "algorithm",
+        "describe",
+        "organizes",
+        "processes"
+      ],
+      "topic": "Mutual Exclusion in Distributed Systems",
+      "difficulty": "hard",
+      "pages": [
+        35,
+        48
+      ]
+    },
+    {
+      "id": "n007",
+      "label": "Can identify safety and liveness in election algorithms",
+      "description": "Election algorithms must ensure safety by electing one leader and liveness by guaranteeing that the election process terminates successfully.",
+      "keywords": [
+        "election",
+        "safety",
+        "liveness",
+        "algorithms",
+        "identify",
+        "must"
+      ],
+      "topic": "Mutual Exclusion in Distributed Systems",
+      "difficulty": "hard",
+      "pages": [
+        31,
+        32
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from_id": "n000",
+      "to_id": "n003",
+      "type": "prerequisite"
+    },
+    {
+      "from_id": "n000",
+      "to_id": "n005",
+      "type": "prerequisite"
+    },
+    {
+      "from_id": "n001",
+      "to_id": "n004",
+      "type": "prerequisite"
+    },
+    {
+      "from_id": "n002",
+      "to_id": "n003",
+      "type": "prerequisite"
+    },
+    {
+      "from_id": "n002",
+      "to_id": "n005",
+      "type": "prerequisite"
+    },
+    {
+      "from_id": "n002",
+      "to_id": "n004",
+      "type": "prerequisite"
+    },
+    {
+      "from_id": "n003",
+      "to_id": "n006",
+      "type": "prerequisite"
+    },
+    {
+      "from_id": "n004",
+      "to_id": "n006",
+      "type": "prerequisite"
+    },
+    {
+      "from_id": "n005",
+      "to_id": "n006",
+      "type": "prerequisite"
+    },
+    {
+      "from_id": "n006",
+      "to_id": "n007",
+      "type": "prerequisite"
+    }
+  ]
+}

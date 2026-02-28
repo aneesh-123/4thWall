@@ -758,8 +758,8 @@ def main() -> None:
             min_concept_len=args.min_concept_len,
             max_concepts=args.max_concepts,
         )
-    total_concepts = sum(len(st.concepts) for t in topics for st in t.subtopics)
-    print(f"      {len(topics)} topic(s), {total_concepts} concept(s).")
+    total_subtopics = sum(len(t.subtopics) for t in topics)
+    print(f"      {len(topics)} topic(s), {total_subtopics} subtopic(s).")
 
     # 7 & 8. Write outputs
     print("[6/6] Writing outputs…")
@@ -773,13 +773,13 @@ def main() -> None:
     print(f"\n{sep}")
     print(f"  Pages processed : {len(pages)}")
     print(f"  Topics found    : {len(topics)}")
-    print(f"  Concepts total  : {total_concepts}")
+    print(f"  Subtopics total : {total_subtopics}")
     print(sep)
     print(f"  {os.path.relpath(json_path)}")
     print(f"  {os.path.relpath(md_path)}")
     print(sep)
 
-    if total_concepts == 0:
+    if total_subtopics == 0:
         print(
             "\n[WARN] No concepts extracted.\n"
             "  • The PDF may be scanned (image-only) — OCR not supported here.\n"
