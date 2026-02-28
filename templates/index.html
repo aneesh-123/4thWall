@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PDF → Study Plan</title>
+  <title>4thWall — AI Tutor</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -198,18 +198,126 @@
     #mdOutput strong { color: #111; }
     #mdOutput em { color: #666; font-size: 0.88rem; }
     #mdOutput hr { border: none; border-top: 1px solid #eee; margin: 20px 0; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex; gap: 0;
+      border-bottom: 2px solid #e0e0e0;
+      margin-bottom: 28px;
+    }
+    .tab-btn {
+      background: none; border: none; cursor: pointer;
+      padding: 10px 22px; font-size: 0.92rem; font-weight: 600;
+      color: #888; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+    .tab-btn:hover:not(.active) { color: #333; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Chat ── */
+    #chatWindow {
+      height: 420px; overflow-y: auto;
+      border: 1px solid #e0e0e0; border-radius: 10px;
+      padding: 16px; background: #fafafa;
+      display: flex; flex-direction: column; gap: 14px;
+      margin-bottom: 14px;
+    }
+    .msg { display: flex; gap: 10px; align-items: flex-start; max-width: 90%; }
+    .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+    .msg .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+      background: #e0e0e0;
+    }
+    .msg.user .avatar { background: #4f46e5; color: #fff; }
+    .msg .bubble {
+      background: #fff; border: 1px solid #e0e0e0;
+      border-radius: 12px; padding: 10px 14px;
+      font-size: 0.9rem; line-height: 1.65; color: #222;
+      max-width: 100%;
+    }
+    .msg.user .bubble { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+    .msg .bubble p { margin-bottom: 6px; }
+    .msg .bubble p:last-child { margin-bottom: 0; }
+    .msg-typing .bubble { color: #aaa; font-style: italic; }
+
+    #chatInput {
+      display: flex; gap: 10px; align-items: flex-end;
+    }
+    #chatInput textarea {
+      flex: 1; resize: none; border: 1px solid #ccc;
+      border-radius: 8px; padding: 10px 12px;
+      font-size: 0.9rem; font-family: inherit; line-height: 1.5;
+      min-height: 44px; max-height: 120px; overflow-y: auto;
+    }
+    #chatInput textarea:focus { outline: none; border-color: #4f46e5; }
+    #sendBtn {
+      background: #4f46e5; color: #fff; border: none;
+      border-radius: 8px; padding: 10px 18px;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      transition: background 0.2s; white-space: nowrap; align-self: flex-end;
+    }
+    #sendBtn:hover:not(:disabled) { background: #4338ca; }
+    #sendBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* outcome selector */
+    .outcome-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 10px; font-size: 0.83rem; color: #666;
+    }
+    .outcome-row select {
+      border: 1px solid #ccc; border-radius: 6px;
+      padding: 3px 8px; font-size: 0.83rem;
+    }
+
+    /* memory sidebar */
+    #chatLayout { display: flex; gap: 20px; align-items: flex-start; }
+    #chatMain   { flex: 1; min-width: 0; }
+    #memorySidebar {
+      width: 220px; flex-shrink: 0;
+      border: 1px solid #e0e0e0; border-radius: 10px;
+      padding: 14px; font-size: 0.8rem; color: #444;
+      background: #fdfdfd; position: sticky; top: 20px;
+    }
+    #memorySidebar h3 {
+      font-size: 0.78rem; text-transform: uppercase;
+      letter-spacing: 0.5px; color: #888; margin-bottom: 10px;
+    }
+    #memorySidebar .mem-section { margin-bottom: 12px; }
+    #memorySidebar .mem-label {
+      font-weight: 600; color: #333; margin-bottom: 4px; font-size: 0.78rem;
+    }
+    .mastery-item { display: flex; gap: 6px; align-items: center; margin-bottom: 3px; }
+    .mastery-bar-wrap { flex: 1; background: #eee; border-radius: 4px; height: 6px; overflow: hidden; }
+    .mastery-bar { height: 100%; border-radius: 4px; background: #4f46e5; transition: width 0.4s; }
+    .mastery-val { font-size: 0.72rem; color: #888; width: 28px; text-align: right; flex-shrink: 0; }
+    .mastery-name { font-size: 0.74rem; color: #555; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pref-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .pref-key { color: #888; }
+    .pref-val { font-weight: 600; color: #4f46e5; }
+    #learnerId { font-size: 0.7rem; color: #bbb; word-break: break-all; margin-top: 6px; }
   </style>
 </head>
 <body>
 
 <header>
   <span>📚</span>
-  <h1>PDF → Study Plan</h1>
+  <h1>4thWall — AI Tutor</h1>
 </header>
 
 <div class="page">
 
-  <!-- Upload card -->
+  <!-- Tab nav -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="pdf">📄 PDF → Study Plan</button>
+    <button class="tab-btn"        data-tab="chat">💬 Tutor Chat</button>
+  </div>
+
+  <!-- ── PDF tab ── -->
+  <div class="tab-panel active" id="tab-pdf">
   <div class="card">
     <h2>Upload a PDF</h2>
 
@@ -247,13 +355,102 @@
     </div>
     <a id="downloadBtn" download="study_plan.md">⬇ Download study_plan.md</a>
     <div id="mdOutput"></div>
+    <div id="switchChatHint" style="display:none;margin-top:18px;text-align:center">
+      <button onclick="switchToChat()" style="background:#4f46e5;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:0.9rem;font-weight:600;cursor:pointer">
+        💬 Chat about this PDF →
+      </button>
+    </div>
   </div>
 
-</div>
+  </div><!-- /tab-pdf -->
+
+  <!-- ── Chat tab ── -->
+  <div class="tab-panel" id="tab-chat">
+    <div id="chatLayout">
+
+      <!-- chat main column -->
+      <div id="chatMain">
+        <div class="card" style="padding:20px">
+
+        <!-- PDF context banner (shown when a doc is loaded) -->
+        <div id="pdfBanner" style="display:none;background:#f0f0ff;border:1px solid #c7c7ff;border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:0.84rem;color:#4338ca;align-items:center;gap:8px">
+          <span>📄</span>
+          <span>Tutoring based on: <strong id="pdfBannerName"></strong></span>
+          <button onclick="clearPdfContext()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem" title="Remove PDF context">✕</button>
+        </div>
+
+        <!-- outcome selector row -->
+        <div class="outcome-row">
+            <label for="outcomeSelect">After each reply, I felt:</label>
+            <select id="outcomeSelect">
+              <option value="">— auto-detect —</option>
+              <option value="correct">✅ I got it (correct)</option>
+              <option value="partial">🟡 Kind of understood (partial)</option>
+              <option value="confused">😕 Still confused</option>
+              <option value="incorrect">❌ I was wrong (incorrect)</option>
+            </select>
+          </div>
+
+          <!-- chat window -->
+          <div id="chatWindow">
+            <div class="msg" id="welcomeMsg">
+              <div class="avatar">🤖</div>
+              <div class="bubble">
+                <p id="welcomeText">Hi! I'm your adaptive tutor. Ask me anything — I'll remember what you know and adapt as we go.</p>
+                <p style="font-size:0.8rem;color:#aaa;margin-top:4px">Your learner profile is created automatically on your first message.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- input row -->
+          <div id="chatInput">
+            <textarea id="msgBox" placeholder="Ask a question…" rows="1"></textarea>
+            <button id="sendBtn">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- memory sidebar -->
+      <div id="memorySidebar">
+        <h3>🧠 Memory</h3>
+
+        <div class="mem-section">
+          <div class="mem-label">Weak Concepts</div>
+          <div id="memConcepts"><span style="color:#bbb;font-size:0.75rem">none yet</span></div>
+        </div>
+
+        <div class="mem-section">
+          <div class="mem-label">Misconceptions</div>
+          <div id="memMisc"><span style="color:#bbb;font-size:0.75rem">none yet</span></div>
+        </div>
+
+        <div class="mem-section">
+          <div class="mem-label">Preferences</div>
+          <div id="memPrefs"><span style="color:#bbb;font-size:0.75rem">none yet</span></div>
+        </div>
+
+        <div id="learnerId"></div>
+      </div>
+
+    </div><!-- /chatLayout -->
+  </div><!-- /tab-chat -->
+
+</div><!-- /page -->
 
 <!-- marked.js for client-side markdown rendering -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
+  // ── Tab switching ─────────────────────────────────────────────────────────
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    });
+  });
+
+  // ── PDF tab ───────────────────────────────────────────────────────────────
   const dropZone    = document.getElementById("dropZone");
   const pdfInput    = document.getElementById("pdfInput");
   const browseLink  = document.getElementById("browseLink");
@@ -270,104 +467,242 @@
 
   let selectedFile = null;
 
-  // ── File selection ──────────────────────────────────────────────────────────
   browseLink.addEventListener("click", () => pdfInput.click());
-  pdfInput.addEventListener("change", () => {
-    if (pdfInput.files[0]) setFile(pdfInput.files[0]);
-  });
-
+  pdfInput.addEventListener("change", () => { if (pdfInput.files[0]) setFile(pdfInput.files[0]); });
   removeFile.addEventListener("click", () => {
-    selectedFile = null;
-    pdfInput.value = "";
-    fileInfo.style.display = "none";
-    dropZone.style.display = "block";
+    selectedFile = null; pdfInput.value = "";
+    fileInfo.style.display = "none"; dropZone.style.display = "block";
     processBtn.disabled = true;
   });
-
-  // ── Drag & drop ─────────────────────────────────────────────────────────────
-  dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+  dropZone.addEventListener("dragover",  e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
   dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
   dropZone.addEventListener("drop", e => {
-    e.preventDefault();
-    dropZone.classList.remove("drag-over");
+    e.preventDefault(); dropZone.classList.remove("drag-over");
     const f = e.dataTransfer.files[0];
     if (f && f.name.toLowerCase().endsWith(".pdf")) setFile(f);
     else showError("Please drop a PDF file.");
   });
-
   function setFile(f) {
-    selectedFile = f;
-    fileName.textContent = f.name;
-    fileInfo.style.display = "flex";
-    dropZone.style.display = "none";
-    processBtn.disabled = false;
-    hideError();
-    hideResults();
+    selectedFile = f; fileName.textContent = f.name;
+    fileInfo.style.display = "flex"; dropZone.style.display = "none";
+    processBtn.disabled = false; hideError(); hideResults();
   }
-
-  // ── Process ─────────────────────────────────────────────────────────────────
   processBtn.addEventListener("click", async () => {
     if (!selectedFile) return;
-
-    showLoading();
-    hideError();
-    hideResults();
-
+    showLoading(); hideError(); hideResults();
     const form = new FormData();
     form.append("pdf", selectedFile);
-
     try {
       const res  = await fetch("/api/extract", { method: "POST", body: form });
       const data = await res.json();
-
-      if (!res.ok || data.error) {
-        showError(data.error || "An unexpected error occurred.");
-        return;
-      }
-
+      if (!res.ok || data.error) { showError(data.error || "An unexpected error occurred."); return; }
       showResults(data);
+      // Link to chat
+      if (data.doc_id) {
+        currentDocId   = data.doc_id;
+        currentDocName = selectedFile.name;
+        showPdfBanner(currentDocName);
+        // Prompt user to switch to chat
+        document.getElementById("switchChatHint").style.display = "block";
+      }
     } catch (err) {
       showError("Network error — is the server running?\n" + err.message);
-    } finally {
-      hideLoading();
-    }
+    } finally { hideLoading(); }
   });
-
-  // ── UI helpers ───────────────────────────────────────────────────────────────
-  function showLoading() {
-    loading.style.display = "block";
-    processBtn.disabled = true;
-  }
-  function hideLoading() {
-    loading.style.display = "none";
-    processBtn.disabled = false;
-  }
-
-  function showError(msg) {
-    errorBox.textContent = msg;
-    errorBox.style.display = "block";
-  }
-  function hideError() { errorBox.style.display = "none"; }
-
+  function showLoading() { loading.style.display = "block"; processBtn.disabled = true; }
+  function hideLoading()  { loading.style.display = "none";  processBtn.disabled = false; }
+  function showError(msg) { errorBox.textContent = msg; errorBox.style.display = "block"; }
+  function hideError()    { errorBox.style.display = "none"; }
   function showResults(data) {
     document.getElementById("statPages").textContent    = data.pages_processed;
     document.getElementById("statTopics").textContent   = data.topics_count;
     document.getElementById("statConcepts").textContent = data.subtopics_count;
     statsBar.style.display = "flex";
-
-    // Render markdown
     mdOutput.innerHTML = marked.parse(data.markdown);
     mdOutput.style.display = "block";
-
-    // Download link
     const blob = new Blob([data.markdown], { type: "text/markdown" });
     downloadBtn.href = URL.createObjectURL(blob);
     downloadBtn.style.display = "inline-block";
-
     resultsCard.style.display = "block";
     resultsCard.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   function hideResults() { resultsCard.style.display = "none"; }
+
+  // ── PDF → Chat banner helpers ─────────────────────────────────────────────
+  function showPdfBanner(name) {
+    const banner = document.getElementById("pdfBanner");
+    document.getElementById("pdfBannerName").textContent = name;
+    banner.style.display = "flex";
+    document.getElementById("welcomeText").textContent =
+      `Hi! I've loaded "${name}". Ask me anything about it — I'll adapt to what you know.`;
+  }
+
+  function clearPdfContext() {
+    currentDocId = null; currentDocName = null;
+    document.getElementById("pdfBanner").style.display = "none";
+    document.getElementById("welcomeText").textContent =
+      "Hi! I'm your adaptive tutor. Ask me anything — I'll remember what you know and adapt as we go.";
+  }
+
+  function switchToChat() {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    document.querySelector(".tab-btn[data-tab='chat']").classList.add("active");
+    document.getElementById("tab-chat").classList.add("active");
+    msgBox.focus();
+  }
+
+  // ── Chat tab ──────────────────────────────────────────────────────────────
+  const chatWindow     = document.getElementById("chatWindow");
+  const msgBox         = document.getElementById("msgBox");
+  const sendBtn        = document.getElementById("sendBtn");
+  const outcomeSelect  = document.getElementById("outcomeSelect");
+  const memConcepts    = document.getElementById("memConcepts");
+  const memMisc        = document.getElementById("memMisc");
+  const memPrefs       = document.getElementById("memPrefs");
+  const learnerIdEl    = document.getElementById("learnerId");
+
+  let learnerId = null;
+  let sessionId = null;
+  let currentDocId = null;       // set after PDF extraction
+  let currentDocName = null;
+
+  // Auto-resize textarea
+  msgBox.addEventListener("input", () => {
+    msgBox.style.height = "auto";
+    msgBox.style.height = Math.min(msgBox.scrollHeight, 120) + "px";
+  });
+
+  // Send on Enter (Shift+Enter = newline)
+  msgBox.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  sendBtn.addEventListener("click", sendMessage);
+
+  function appendBubble(role, text) {
+    const div = document.createElement("div");
+    div.className = "msg" + (role === "user" ? " user" : "");
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = role === "user" ? "🧑" : "🤖";
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    // Render markdown in tutor messages
+    if (role === "assistant") {
+      bubble.innerHTML = marked.parse(text);
+    } else {
+      bubble.textContent = text;
+    }
+    div.appendChild(avatar);
+    div.appendChild(bubble);
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    return div;
+  }
+
+  function appendTyping() {
+    const div = document.createElement("div");
+    div.className = "msg msg-typing";
+    div.id = "typingIndicator";
+    div.innerHTML = '<div class="avatar">🤖</div><div class="bubble">Thinking…</div>';
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+  function removeTyping() {
+    const t = document.getElementById("typingIndicator");
+    if (t) t.remove();
+  }
+
+  function updateMemory(preview) {
+    if (!preview) return;
+
+    // Concepts
+    const weak = preview.weak_concepts || [];
+    if (weak.length) {
+      memConcepts.innerHTML = weak.map(c => `
+        <div class="mastery-item">
+          <span class="mastery-name" title="${c.concept_id}">${c.concept_id.replace(/_/g,' ')}</span>
+          <div class="mastery-bar-wrap"><div class="mastery-bar" style="width:${(c.mastery*100).toFixed(0)}%"></div></div>
+          <span class="mastery-val">${(c.mastery*100).toFixed(0)}%</span>
+        </div>`).join("");
+    } else {
+      memConcepts.innerHTML = '<span style="color:#bbb;font-size:0.75rem">none yet</span>';
+    }
+
+    // Misconceptions
+    const misc = preview.misconceptions || [];
+    if (misc.length) {
+      memMisc.innerHTML = misc.map(m =>
+        `<div style="margin-bottom:3px;font-size:0.76rem">⚠ ${m.misconception_id.replace(/_/g,' ')} <span style="color:#aaa">(×${m.count})</span></div>`
+      ).join("");
+    } else {
+      memMisc.innerHTML = '<span style="color:#bbb;font-size:0.75rem">none yet</span>';
+    }
+
+    // Preferences
+    const prefs = preview.preferences || {};
+    const prefKeys = Object.keys(prefs);
+    if (prefKeys.length) {
+      memPrefs.innerHTML = prefKeys.map(k =>
+        `<div class="pref-row"><span class="pref-key">${k}</span><span class="pref-val">${prefs[k]}</span></div>`
+      ).join("");
+    } else {
+      memPrefs.innerHTML = '<span style="color:#bbb;font-size:0.75rem">none yet</span>';
+    }
+  }
+
+  async function sendMessage() {
+    const text = msgBox.value.trim();
+    if (!text || sendBtn.disabled) return;
+
+    // welcome message goes away after first real message
+    const welcome = document.getElementById("welcomeMsg");
+    if (welcome) welcome.remove();
+
+    appendBubble("user", text);
+    msgBox.value = ""; msgBox.style.height = "auto";
+    sendBtn.disabled = true;
+    appendTyping();
+
+    const payload = { message: text };
+    if (learnerId)      payload.learner_id    = learnerId;
+    if (sessionId)      payload.session_id    = sessionId;
+    if (currentDocId)   payload.doc_id        = currentDocId;
+    const outcome = outcomeSelect.value;
+    if (outcome)    payload.outcome_signal = outcome;
+    // reset selector for next turn
+    outcomeSelect.value = "";
+
+    try {
+      const res  = await fetch("/chat/turn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      removeTyping();
+
+      if (!res.ok || data.error) {
+        appendBubble("assistant", "⚠️ Error: " + (data.error || res.statusText));
+        return;
+      }
+
+      // Persist IDs
+      learnerId = data.learner_id;
+      sessionId = data.session_id;
+      learnerIdEl.textContent = "ID: " + learnerId.slice(0, 18) + "…";
+
+      appendBubble("assistant", data.assistant);
+      updateMemory(data.memory_preview);
+
+    } catch (err) {
+      removeTyping();
+      appendBubble("assistant", "⚠️ Network error: " + err.message);
+    } finally {
+      sendBtn.disabled = false;
+      msgBox.focus();
+    }
+  }
 </script>
 </body>
 </html>
