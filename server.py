@@ -399,6 +399,29 @@ def chat_turn():
     })
 
 
+# ── Knowledge-graph endpoint ─────────────────────────────────────────────────
+
+@app.route("/api/knowledge-graph/<learner_id>")
+def knowledge_graph(learner_id: str):
+    """
+    GET /api/knowledge-graph/<learner_id>
+    Returns a D3-compatible graph: {nodes: [...], links: [...]}
+    """
+    mem = get_memory_client()
+    try:
+        profile = mem.get_profile(learner_id)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+    preview = build_memory_preview(profile)
+    graph   = preview.get("graph", {"nodes": [], "links": []})
+    return jsonify({
+        "learner_id": learner_id,
+        "nodes":      graph["nodes"],
+        "links":      graph["links"],
+    })
+
+
 if __name__ == "__main__":
     print("Starting server → http://localhost:5000")
     app.run(debug=True, port=5000)

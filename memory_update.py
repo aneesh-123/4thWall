@@ -121,6 +121,22 @@ def apply_extract_to_profile(
             f"{abs(delta):.3f}",
         )
 
+    # ── Concept edges (co-occurrence knowledge graph) ─────────────────────────
+    # Every pair of concepts appearing in the same turn gets a bidirectional
+    # co-occurrence edge, weighted by how many turns they share.
+    edges_node = profile.setdefault("concept_edges", {})
+    concept_ids_this_turn = [
+        c["concept_id"]
+        for c in extract.get("concepts", [])
+        if c.get("confidence", 0) >= 0.2
+    ]
+    for i, cid_a in enumerate(concept_ids_this_turn):
+        for cid_b in concept_ids_this_turn[i + 1:]:
+            edges_node.setdefault(cid_a, {})
+            edges_node.setdefault(cid_b, {})
+            edges_node[cid_a][cid_b] = edges_node[cid_a].get(cid_b, 0) + 1
+            edges_node[cid_b][cid_a] = edges_node[cid_b].get(cid_a, 0) + 1
+
     # ── Misconceptions ────────────────────────────────────────────────────────
     misc_node = profile.setdefault("misconceptions", {})
     for m in extract.get("misconceptions", []):
@@ -185,22 +201,57 @@ def apply_extract_to_profile(
 def build_memory_preview(profile: dict[str, Any]) -> dict[str, Any]:
     """
     Build the compact memory_preview dict returned in /chat/turn responses.
+    Includes full graph data (nodes + edges) for the knowledge-graph UI.
     """
     concepts = profile.get("concepts", {})
+    misconceptions = profile.get("misconceptions", {})
+    edges_raw = profile.get("concept_edges", {})
+
     weak = sorted(
         [{"concept_id": cid, "mastery": round(v["mastery"], 3)}
          for cid, v in concepts.items() if v["mastery"] < 0.5],
         key=lambda x: x["mastery"],
     )[:5]
 
-    misconceptions = sorted(
+    misconceptions_preview = sorted(
         [{"misconception_id": mid, "count": v["count"]}
-         for mid, v in profile.get("misconceptions", {}).items()],
+         for mid, v in misconceptions.items()],
         key=lambda x: -x["count"],
     )[:3]
 
+    # ── Knowledge graph: nodes ────────────────────────────────────────────────
+    misc_by_concept: set[str] = {
+        v["concept_id"] for v in misconceptions.values()
+    }
+    nodes = [
+        {
+            "id":              cid,
+            "mastery":         round(v["mastery"], 3),
+            "attempts":        v.get("attempts", 0),
+            "last_outcome":    v.get("last_outcome", ""),
+            "has_misconception": cid in misc_by_concept,
+        }
+        for cid, v in concepts.items()
+    ]
+
+    # ── Knowledge graph: edges (deduplicated) ─────────────────────────────────
+    seen: set[tuple[str, str]] = set()
+    links: list[dict] = []
+    for cid_a, targets in edges_raw.items():
+        if cid_a not in concepts:
+            continue
+        for cid_b, weight in targets.items():
+            if cid_b not in concepts:
+                continue
+            key = tuple(sorted([cid_a, cid_b]))
+            if key in seen:
+                continue
+            seen.add(key)
+            links.append({"source": cid_a, "target": cid_b, "weight": weight})
+
     return {
         "weak_concepts":   weak,
-        "misconceptions":  misconceptions,
+        "misconceptions":  misconceptions_preview,
         "preferences":     profile.get("preferences", {}),
+        "graph":           {"nodes": nodes, "links": links},
     }

@@ -323,6 +323,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="pdf">📄 PDF → Study Plan</button>
     <button class="tab-btn"        data-tab="chat">💬 Tutor Chat</button>
+    <button class="tab-btn"        data-tab="graph">🧠 Knowledge Graph</button>
   </div>
 
   <!-- ── PDF tab ── -->
@@ -445,10 +446,39 @@
     </div><!-- /chatLayout -->
   </div><!-- /tab-chat -->
 
+  <!-- ── Knowledge Graph tab ── -->
+  <div class="tab-panel" id="tab-graph">
+    <div class="card">
+      <h2>🧠 Knowledge Graph</h2>
+      <p style="color:#777;font-size:0.87rem;margin-bottom:12px">
+        Your understanding as a live network. Each node is a concept — coloured by mastery.
+        Edges connect concepts explored together. Red borders mark known misconceptions.
+        Drag nodes to rearrange, scroll to zoom.
+      </p>
+      <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;font-size:0.8rem;align-items:center">
+        <span style="display:flex;align-items:center;gap:5px"><svg width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/></svg>Low mastery</span>
+        <span style="display:flex;align-items:center;gap:5px"><svg width="14" height="14"><circle cx="7" cy="7" r="6" fill="#f59e0b"/></svg>Medium</span>
+        <span style="display:flex;align-items:center;gap:5px"><svg width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/></svg>High mastery</span>
+        <span style="display:flex;align-items:center;gap:5px"><svg width="14" height="14"><circle cx="7" cy="7" r="6" fill="#94a3b8" stroke="#dc2626" stroke-width="2.5"/></svg>Misconception</span>
+        <span style="color:#aaa">Node size = attempts</span>
+      </div>
+      <div id="graphEmpty" style="display:none;text-align:center;padding:48px 24px;color:#aaa">
+        <div style="font-size:2.5rem">&#x1F5FA;</div>
+        <p style="margin-top:8px">Chat about a topic first — concepts will appear here as you learn.</p>
+      </div>
+      <div id="graphContainer" style="width:100%;height:540px;border:1px solid #e0e0e0;border-radius:10px;background:#fafafa;overflow:hidden;position:relative">
+        <svg id="graphSvg" style="width:100%;height:100%"></svg>
+        <div id="graphTooltip" style="position:absolute;display:none;background:rgba(15,23,42,0.9);color:#f8fafc;padding:9px 13px;border-radius:7px;font-size:0.79rem;pointer-events:none;z-index:10;max-width:200px;line-height:1.6"></div>
+      </div>
+    </div>
+  </div><!-- /tab-graph -->
+
 </div><!-- /page -->
 
 <!-- marked.js for client-side markdown rendering -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- D3.js for knowledge graph -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script>
   // ── Tab switching ─────────────────────────────────────────────────────────
   document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -456,8 +486,7 @@
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
       btn.classList.add("active");
-      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
-    });
+      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");      if (btn.dataset.tab === "graph") refreshKnowledgeGraph();    });
   });
 
   // ── PDF tab ───────────────────────────────────────────────────────────────
@@ -674,6 +703,11 @@
     } else {
       memPrefs.innerHTML = '<span style="color:#bbb;font-size:0.75rem">none yet</span>';
     }
+
+    // Live-update graph if the graph tab is visible
+    if (preview.graph && document.getElementById("tab-graph").classList.contains("active")) {
+      _renderGraphFromPreview(preview.graph);
+    }
   }
 
   async function sendMessage() {
@@ -736,6 +770,139 @@
       sendBtn.disabled = false;
       msgBox.focus();
     }
+  }
+
+  // ── Knowledge Graph ──────────────────────────────────────────────────
+
+  let _graphSimulation = null;
+
+  async function refreshKnowledgeGraph() {
+    if (!learnerId) {
+      document.getElementById("graphEmpty").style.display = "block";
+      document.getElementById("graphContainer").style.display = "none";
+      return;
+    }
+    try {
+      const res  = await fetch("/api/knowledge-graph/" + learnerId);
+      const data = await res.json();
+      _renderGraphFromPreview(data);
+    } catch(e) {
+      console.warn("Graph fetch failed", e);
+    }
+  }
+
+  function _renderGraphFromPreview(data) {
+    const nodes = data.nodes || [];
+    const links = data.links || [];
+    const emptyEl     = document.getElementById("graphEmpty");
+    const containerEl = document.getElementById("graphContainer");
+
+    if (!nodes.length) {
+      emptyEl.style.display = "block";
+      containerEl.style.display = "none";
+      return;
+    }
+    emptyEl.style.display = "none";
+    containerEl.style.display = "block";
+
+    const svg = d3.select("#graphSvg");
+    svg.selectAll("*").remove();
+    if (_graphSimulation) { _graphSimulation.stop(); _graphSimulation = null; }
+
+    const W = containerEl.clientWidth  || 600;
+    const H = containerEl.clientHeight || 540;
+
+    // Deep-clone to avoid D3 mutating the original objects across re-renders
+    const nodesCopy = nodes.map(d => ({ ...d }));
+    const idSet = new Set(nodesCopy.map(d => d.id));
+    const linksCopy = links
+      .filter(l => idSet.has(l.source) && idSet.has(l.target))
+      .map(l => ({ ...l }));
+
+    const colorScale = d3.scaleLinear()
+      .domain([0, 0.5, 1])
+      .range(["#ef4444", "#f59e0b", "#22c55e"]);
+
+    const rFn = d => Math.max(10, Math.min(26, 10 + (d.attempts || 0) * 1.8));
+
+    // Zoom / pan
+    const zoomBehaviour = d3.zoom().scaleExtent([0.2, 4])
+      .on("zoom", ev => g.attr("transform", ev.transform));
+    svg.call(zoomBehaviour);
+
+    const g = svg.append("g");
+
+    // Links
+    const linkSel = g.append("g")
+      .attr("stroke", "#cbd5e1")
+      .selectAll("line")
+      .data(linksCopy)
+      .join("line")
+      .attr("stroke-width", d => Math.max(1, Math.min(Math.sqrt(d.weight || 1) * 1.5, 7)))
+      .attr("stroke-opacity", 0.75);
+
+    // Nodes
+    const tooltip = document.getElementById("graphTooltip");
+    const nodeSel = g.append("g")
+      .selectAll("circle")
+      .data(nodesCopy)
+      .join("circle")
+      .attr("r", rFn)
+      .attr("fill", d => colorScale(d.mastery))
+      .attr("stroke", d => d.has_misconception ? "#dc2626" : "rgba(255,255,255,0.85)")
+      .attr("stroke-width", d => d.has_misconception ? 3 : 1.5)
+      .attr("cursor", "grab")
+      .on("mouseover", (ev, d) => {
+        tooltip.style.display = "block";
+        tooltip.innerHTML =
+          `<strong>${d.id.replace(/_/g," ")}</strong><br>` +
+          `Mastery: <b>${(d.mastery*100).toFixed(0)}%</b><br>` +
+          `Attempts: ${d.attempts || 0}<br>` +
+          `Last outcome: ${d.last_outcome || "—"}` +
+          (d.has_misconception ? "<br><span style='color:#fca5a5'>⚠️ Misconception noted</span>" : "");
+      })
+      .on("mousemove", ev => {
+        const rect = containerEl.getBoundingClientRect();
+        tooltip.style.left = (ev.clientX - rect.left + 14) + "px";
+        tooltip.style.top  = (ev.clientY - rect.top  - 8)  + "px";
+      })
+      .on("mouseleave", () => { tooltip.style.display = "none"; })
+      .call(d3.drag()
+        .on("start", (ev, d) => { if (!ev.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+        .on("drag",  (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
+        .on("end",   (ev, d) => { if (!ev.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+    // Labels
+    const labelSel = g.append("g")
+      .selectAll("text")
+      .data(nodesCopy)
+      .join("text")
+      .text(d => d.id.replace(/_/g, " "))
+      .attr("text-anchor", "middle")
+      .attr("font-size", 10)
+      .attr("font-family", "system-ui,sans-serif")
+      .attr("fill", "#374151")
+      .attr("pointer-events", "none");
+
+    // Force simulation
+    const sim = d3.forceSimulation(nodesCopy)
+      .force("link",      d3.forceLink(linksCopy).id(d => d.id).distance(100))
+      .force("charge",    d3.forceManyBody().strength(-280))
+      .force("center",    d3.forceCenter(W / 2, H / 2))
+      .force("collision", d3.forceCollide().radius(d => rFn(d) + 8));
+
+    _graphSimulation = sim;
+
+    sim.on("tick", () => {
+      linkSel
+        .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+      nodeSel
+        .attr("cx", d => d.x).attr("cy", d => d.y);
+      labelSel
+        .attr("x", d => d.x)
+        .attr("y", d => d.y + rFn(d) + 13);
+    });
   }
 </script>
 </body>
