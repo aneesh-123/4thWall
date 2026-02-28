@@ -46,7 +46,7 @@ class TestMemoryClientGetProfile(unittest.TestCase):
     @patch("supermemory_client.Supermemory")
     def test_returns_default_on_empty_results(self, MockSupermemory):
         sdk = MockSupermemory.return_value
-        sdk.search.execute.return_value = _make_search_response([])
+        sdk.search.documents.return_value = _make_search_response([])
 
         from supermemory_client import MemoryClient
         client = MemoryClient()
@@ -59,7 +59,7 @@ class TestMemoryClientGetProfile(unittest.TestCase):
     def test_returns_stored_profile(self, MockSupermemory):
         stored = {**DEFAULT_PROFILE, "recent_summary": "stored value"}
         sdk = MockSupermemory.return_value
-        sdk.search.execute.return_value = _make_search_response(
+        sdk.search.documents.return_value = _make_search_response(
             [_make_search_result(json.dumps(stored))]
         )
 
@@ -72,7 +72,7 @@ class TestMemoryClientGetProfile(unittest.TestCase):
     @patch("supermemory_client.Supermemory")
     def test_returns_default_on_search_exception(self, MockSupermemory):
         sdk = MockSupermemory.return_value
-        sdk.search.execute.side_effect = ConnectionError("network error")
+        sdk.search.documents.side_effect = ConnectionError("network error")
 
         from supermemory_client import MemoryClient
         client = MemoryClient()
@@ -87,15 +87,15 @@ class TestMemoryClientPutProfile(unittest.TestCase):
     def test_deletes_old_then_adds_new(self, MockSupermemory):
         sdk = MockSupermemory.return_value
         old_doc = _make_search_result(json.dumps(DEFAULT_PROFILE))
-        sdk.search.execute.return_value = _make_search_response([old_doc])
-        sdk.memories.delete.return_value = None
+        sdk.search.documents.return_value = _make_search_response([old_doc])
+        sdk.documents.delete.return_value = None
         sdk.add.return_value = None
 
         from supermemory_client import MemoryClient
         client = MemoryClient()
         client.put_profile("alice", {**DEFAULT_PROFILE, "recent_summary": "updated"})
 
-        sdk.memories.delete.assert_called_once_with("mock-id-123")
+        sdk.documents.delete.assert_called_once_with("mock-id-123")
         sdk.add.assert_called_once()
         call_kwargs = sdk.add.call_args
         content = call_kwargs[1].get("content") or call_kwargs[0][0]
@@ -105,7 +105,7 @@ class TestMemoryClientPutProfile(unittest.TestCase):
     @patch("supermemory_client.Supermemory")
     def test_add_called_with_correct_tags(self, MockSupermemory):
         sdk = MockSupermemory.return_value
-        sdk.search.execute.return_value = _make_search_response([])
+        sdk.search.documents.return_value = _make_search_response([])
         sdk.add.return_value = None
 
         from supermemory_client import MemoryClient
@@ -145,7 +145,7 @@ class TestMemoryClientQueryRecentEvents(unittest.TestCase):
         event1 = {"ts": "2026-02-27", "outcome": "correct"}
         event2 = {"ts": "2026-02-28", "outcome": "partial"}
         sdk = MockSupermemory.return_value
-        sdk.search.execute.return_value = _make_search_response([
+        sdk.search.documents.return_value = _make_search_response([
             _make_search_result(json.dumps(event1)),
             _make_search_result(json.dumps(event2)),
         ])
@@ -160,7 +160,7 @@ class TestMemoryClientQueryRecentEvents(unittest.TestCase):
     @patch("supermemory_client.Supermemory")
     def test_returns_empty_list_on_error(self, MockSupermemory):
         sdk = MockSupermemory.return_value
-        sdk.search.execute.side_effect = RuntimeError("fail")
+        sdk.search.documents.side_effect = RuntimeError("fail")
 
         from supermemory_client import MemoryClient
         client = MemoryClient()
