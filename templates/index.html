@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF → Study Plan</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.3px; }
+    header span { font-size: 1.4rem; }
+
+    /* ── Layout ── */
+    .page { max-width: 860px; margin: 40px auto; padding: 0 20px 80px; }
+
+    /* ── Card ── */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 18px; color: #444; }
+
+    /* ── Drop zone ── */
+    #dropZone {
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    #dropZone:hover, #dropZone.drag-over {
+      border-color: #4f46e5;
+      background: #f0f0ff;
+    }
+    #dropZone .icon { font-size: 2.4rem; margin-bottom: 10px; }
+    #dropZone p { color: #666; font-size: 0.9rem; line-height: 1.6; }
+    #dropZone strong { color: #4f46e5; cursor: pointer; }
+    #dropZone strong:hover { text-decoration: underline; }
+
+    #fileInfo {
+      margin-top: 14px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: #f0f0ff;
+      border: 1px solid #c7c7ff;
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+    #fileInfo .file-icon { font-size: 1.3rem; }
+    #fileInfo .file-name { font-size: 0.88rem; font-weight: 500; color: #333; flex: 1; }
+    #fileInfo .remove-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 1rem; color: #999; padding: 0 4px;
+    }
+    #fileInfo .remove-btn:hover { color: #e53e3e; }
+
+    /* ── Options ── */
+    .options { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+
+    .toggle-row {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .toggle-label { font-size: 0.88rem; color: #555; }
+    .toggle-label strong { color: #1a1a1a; }
+
+    /* Toggle switch */
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0; background: #ccc;
+      border-radius: 22px; cursor: pointer; transition: background 0.2s;
+    }
+    .slider::before {
+      content: ""; position: absolute;
+      width: 16px; height: 16px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: transform 0.2s;
+    }
+    input:checked + .slider { background: #4f46e5; }
+    input:checked + .slider::before { transform: translateX(18px); }
+
+    .select-row { display: flex; align-items: center; gap: 8px; }
+    .select-row label { font-size: 0.88rem; color: #555; }
+    select {
+      border: 1px solid #ccc; border-radius: 6px;
+      padding: 4px 8px; font-size: 0.85rem; background: #fff;
+    }
+
+    /* ── Button ── */
+    #processBtn {
+      display: block; width: 100%; margin-top: 20px;
+      background: #4f46e5; color: #fff;
+      border: none; border-radius: 8px;
+      padding: 13px; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: background 0.2s, opacity 0.2s;
+    }
+    #processBtn:hover:not(:disabled) { background: #4338ca; }
+    #processBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Loading ── */
+    #loading {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .spinner {
+      width: 40px; height: 40px; margin: 0 auto 16px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #4f46e5;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading p { color: #666; font-size: 0.9rem; }
+
+    /* ── Error ── */
+    #errorBox {
+      display: none;
+      background: #fff5f5; border: 1px solid #fed7d7;
+      border-radius: 8px; padding: 14px 18px;
+      color: #c53030; font-size: 0.88rem;
+      white-space: pre-wrap;
+    }
+
+    /* ── Stats bar ── */
+    #statsBar {
+      display: none;
+      gap: 0;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .stat {
+      flex: 1; padding: 14px 20px;
+      border-right: 1px solid #e0e0e0;
+      text-align: center;
+    }
+    .stat:last-child { border-right: none; }
+    .stat .num { font-size: 1.6rem; font-weight: 700; color: #4f46e5; }
+    .stat .lbl { font-size: 0.75rem; color: #888; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── Download ── */
+    #downloadBtn {
+      display: none;
+      float: right;
+      background: #f0f0ff;
+      color: #4f46e5;
+      border: 1px solid #c7c7ff;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    #downloadBtn:hover { background: #e0e0ff; }
+
+    /* ── Markdown output ── */
+    #mdOutput {
+      display: none;
+      line-height: 1.75;
+      font-size: 0.92rem;
+      color: #222;
+    }
+    #mdOutput h1 { font-size: 1.4rem; margin-bottom: 6px; }
+    #mdOutput h2 { font-size: 1.15rem; margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 2px solid #f0f0f0; color: #333; }
+    #mdOutput h3 { font-size: 1rem; margin: 20px 0 8px; color: #4f46e5; }
+    #mdOutput h4 { font-size: 0.92rem; font-weight: 700; margin: 16px 0 6px; color: #1a1a1a; }
+    #mdOutput p { margin-bottom: 8px; }
+    #mdOutput blockquote {
+      border-left: 3px solid #4f46e5; margin: 8px 0 12px;
+      padding: 6px 14px; background: #f8f8ff; color: #333;
+      border-radius: 0 6px 6px 0; font-style: italic;
+    }
+    #mdOutput ul { margin: 6px 0 10px 18px; }
+    #mdOutput li { margin-bottom: 4px; }
+    #mdOutput strong { color: #111; }
+    #mdOutput em { color: #666; font-size: 0.88rem; }
+    #mdOutput hr { border: none; border-top: 1px solid #eee; margin: 20px 0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span>📚</span>
+  <h1>PDF → Study Plan</h1>
+</header>
+
+<div class="page">
+
+  <!-- Upload card -->
+  <div class="card">
+    <h2>Upload a PDF</h2>
+
+    <div id="dropZone">
+      <div class="icon">📄</div>
+      <p>Drag &amp; drop your PDF here, or <strong id="browseLink">browse</strong></p>
+      <p style="margin-top:6px; font-size:0.8rem; color:#aaa;">Max 50 MB</p>
+    </div>
+    <input type="file" id="pdfInput" accept=".pdf" style="display:none" />
+
+    <div id="fileInfo">
+      <span class="file-icon">📄</span>
+      <span class="file-name" id="fileName"></span>
+      <button class="remove-btn" id="removeFile" title="Remove">✕</button>
+    </div>
+
+    <button id="processBtn" disabled style="margin-top:20px;">Generate Study Plan</button>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <p id="loadingMsg">Processing your PDF…</p>
+  </div>
+
+  <!-- Error -->
+  <div id="errorBox"></div>
+
+  <!-- Results -->
+  <div class="card" id="resultsCard" style="display:none">
+    <div id="statsBar" style="display:flex">
+      <div class="stat"><div class="num" id="statPages">—</div><div class="lbl">Pages</div></div>
+      <div class="stat"><div class="num" id="statTopics">—</div><div class="lbl">Topics</div></div>
+      <div class="stat"><div class="num" id="statConcepts">—</div><div class="lbl">Subtopics</div></div>
+    </div>
+    <a id="downloadBtn" download="study_plan.md">⬇ Download study_plan.md</a>
+    <div id="mdOutput"></div>
+  </div>
+
+</div>
+
+<!-- marked.js for client-side markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  const dropZone    = document.getElementById("dropZone");
+  const pdfInput    = document.getElementById("pdfInput");
+  const browseLink  = document.getElementById("browseLink");
+  const fileInfo    = document.getElementById("fileInfo");
+  const fileName    = document.getElementById("fileName");
+  const removeFile  = document.getElementById("removeFile");
+  const processBtn  = document.getElementById("processBtn");
+  const loading     = document.getElementById("loading");
+  const errorBox    = document.getElementById("errorBox");
+  const resultsCard = document.getElementById("resultsCard");
+  const statsBar    = document.getElementById("statsBar");
+  const downloadBtn = document.getElementById("downloadBtn");
+  const mdOutput    = document.getElementById("mdOutput");
+
+  let selectedFile = null;
+
+  // ── File selection ──────────────────────────────────────────────────────────
+  browseLink.addEventListener("click", () => pdfInput.click());
+  pdfInput.addEventListener("change", () => {
+    if (pdfInput.files[0]) setFile(pdfInput.files[0]);
+  });
+
+  removeFile.addEventListener("click", () => {
+    selectedFile = null;
+    pdfInput.value = "";
+    fileInfo.style.display = "none";
+    dropZone.style.display = "block";
+    processBtn.disabled = true;
+  });
+
+  // ── Drag & drop ─────────────────────────────────────────────────────────────
+  dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+  dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.classList.remove("drag-over");
+    const f = e.dataTransfer.files[0];
+    if (f && f.name.toLowerCase().endsWith(".pdf")) setFile(f);
+    else showError("Please drop a PDF file.");
+  });
+
+  function setFile(f) {
+    selectedFile = f;
+    fileName.textContent = f.name;
+    fileInfo.style.display = "flex";
+    dropZone.style.display = "none";
+    processBtn.disabled = false;
+    hideError();
+    hideResults();
+  }
+
+  // ── Process ─────────────────────────────────────────────────────────────────
+  processBtn.addEventListener("click", async () => {
+    if (!selectedFile) return;
+
+    showLoading();
+    hideError();
+    hideResults();
+
+    const form = new FormData();
+    form.append("pdf", selectedFile);
+
+    try {
+      const res  = await fetch("/api/extract", { method: "POST", body: form });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        showError(data.error || "An unexpected error occurred.");
+        return;
+      }
+
+      showResults(data);
+    } catch (err) {
+      showError("Network error — is the server running?\n" + err.message);
+    } finally {
+      hideLoading();
+    }
+  });
+
+  // ── UI helpers ───────────────────────────────────────────────────────────────
+  function showLoading() {
+    loading.style.display = "block";
+    processBtn.disabled = true;
+  }
+  function hideLoading() {
+    loading.style.display = "none";
+    processBtn.disabled = false;
+  }
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = "block";
+  }
+  function hideError() { errorBox.style.display = "none"; }
+
+  function showResults(data) {
+    document.getElementById("statPages").textContent    = data.pages_processed;
+    document.getElementById("statTopics").textContent   = data.topics_count;
+    document.getElementById("statConcepts").textContent = data.subtopics_count;
+    statsBar.style.display = "flex";
+
+    // Render markdown
+    mdOutput.innerHTML = marked.parse(data.markdown);
+    mdOutput.style.display = "block";
+
+    // Download link
+    const blob = new Blob([data.markdown], { type: "text/markdown" });
+    downloadBtn.href = URL.createObjectURL(blob);
+    downloadBtn.style.display = "inline-block";
+
+    resultsCard.style.display = "block";
+    resultsCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function hideResults() { resultsCard.style.display = "none"; }
+</script>
+</body>
+</html>

@@ -69,24 +69,18 @@ except ImportError:
 # ─────────────────────────────────────────────────────────────────────────────
 
 @dataclass
-class Concept:
+class StudyItem:
+    """One subtopic entry under a topic in the study plan."""
     name: str
-    description: str
-    keywords: list[str] = field(default_factory=list)
-    check_questions: list[str] = field(default_factory=list)
+    notes: str = ""
     pages: list[int] = field(default_factory=list)
 
 
 @dataclass
-class Subtopic:
-    subtopic: str
-    concepts: list[Concept] = field(default_factory=list)
-
-
-@dataclass
-class Topic:
+class StudyTopic:
+    """A top-level topic with its list of subtopics."""
     topic: str
-    subtopics: list[Subtopic] = field(default_factory=list)
+    subtopics: list[StudyItem] = field(default_factory=list)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -528,64 +522,46 @@ def _questions(name: str, kws: list[str]) -> list[str]:
 # LLM-mode extraction (replaces step 5 entirely)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _llm_full_pdf(
+def _llm_study_plan(
     cleaned: list[tuple[int, list[str]]],
-    max_concepts: int,
-) -> list[Topic]:
+) -> list[StudyTopic]:
     """
-    Send the entire PDF text in ONE call to the LLM and parse the full
-    Topic → Subtopic → Concept tree from its response.
+    Send the entire PDF text in ONE call and ask the LLM to return a study
+    plan: a list of topics, each with its subtopics from the slides.
 
-    Each page is labelled so the model can populate the 'pages' field.
-    gpt-4o-mini supports 128k tokens, easily covering a 40-page PDF.
+    Each page is labelled [Page N] so the model can reference page numbers.
+    gpt-4o-mini has a 128k-token context window — easily fits a 40-page PDF.
     """
-    # Build a single text block with page markers
     page_blocks: list[str] = []
     for page_num, lines in cleaned:
         if lines:
             page_blocks.append(f"[Page {page_num}]\n" + "\n".join(lines))
     full_text = "\n\n".join(page_blocks)
 
-    prompt = f"""You are an expert educator building a mastery-based concept map from lecture slides.
+    prompt = f"""You are an expert educator. I will give you the full text of a set of lecture slides.
+Your job is to extract a clear, structured study plan from them.
 
-Below is the full text of a lecture PDF, with page numbers marked as [Page N].
+The text below comes from a PDF, with each page labelled [Page N].
 
 ---
 {full_text}
 ---
 
-Extract ALL key learning concepts from the entire document and organise them into a hierarchy:
-  topics → subtopics → concepts
+Identify the main topics covered in these slides. For each topic, list the subtopics
+or specific concepts that were taught under it. Write a brief note (1–2 sentences)
+for each subtopic summarising what it covers. Include the page numbers where it appears
+if you can tell.
 
-Rules:
-• Each concept "name" must start with one of:
-    Can explain / Can apply / Can distinguish / Can compute / Can prove / Can identify
-• Each concept needs:
-    "name"            — micro-skill phrase (e.g. "Can explain gradient descent")
-    "description"     — 1–2 clear sentences
-    "keywords"        — list of 3–5 key terms
-    "check_questions" — list of exactly 2 short questions (not essays)
-    "pages"           — list of page numbers where this concept appears
-• Aim for up to {max_concepts} concepts per subtopic.
-• Group related concepts under meaningful topic and subtopic names.
-
-Return ONLY a valid JSON object in exactly this shape, no other text:
+Return ONLY a valid JSON object in exactly this shape — no other text, no markdown fences:
 {{
   "topics": [
     {{
-      "topic": "...",
+      "topic": "Main topic name",
       "subtopics": [
         {{
-          "subtopic": "...",
-          "concepts": [
-            {{
-              "name": "Can explain ...",
-              "description": "...",
-              "keywords": ["...", "..."],
-              "check_questions": ["...", "..."],
-              "pages": [1, 2]
-            }}
-          ]
+          "name": "Subtopic or concept name",
+          "notes": "1–2 sentence summary of what this covers.",
+          "pages": [1, 2]
         }}
       ]
     }}
@@ -594,30 +570,23 @@ Return ONLY a valid JSON object in exactly this shape, no other text:
 
     raw = call_llm(prompt)
 
-    # Parse: look for the outer JSON object
     try:
         m = re.search(r"\{.*\}", raw, re.DOTALL)
         data = json.loads(m.group()) if m else {}
     except (json.JSONDecodeError, AttributeError):
         data = {}
 
-    topics: list[Topic] = []
+    topics: list[StudyTopic] = []
     for t_data in data.get("topics", []):
-        topic = Topic(topic=t_data.get("topic", "Unknown"))
-        for st_data in t_data.get("subtopics", []):
-            subtopic = Subtopic(subtopic=st_data.get("subtopic", "Overview"))
-            for c_data in st_data.get("concepts", [])[:max_concepts]:
-                if not c_data.get("name"):
-                    continue
-                subtopic.concepts.append(Concept(
-                    name=c_data.get("name", ""),
-                    description=c_data.get("description", ""),
-                    keywords=c_data.get("keywords", [])[:5],
-                    check_questions=c_data.get("check_questions", [])[:2],
-                    pages=c_data.get("pages", []),
-                ))
-            if subtopic.concepts:
-                topic.subtopics.append(subtopic)
+        topic = StudyTopic(topic=t_data.get("topic", "Unknown"))
+        for st in t_data.get("subtopics", []):
+            if not st.get("name"):
+                continue
+            topic.subtopics.append(StudyItem(
+                name=st.get("name", ""),
+                notes=st.get("notes", ""),
+                pages=st.get("pages", []),
+            ))
         if topic.subtopics:
             topics.append(topic)
 
@@ -632,32 +601,26 @@ def process_bucket(
     bucket: _Bucket,
     min_concept_len: int = 4,
     max_concepts: int = 8,
-) -> list[Concept]:
+) -> list[StudyItem]:
+    """Heuristic fallback: convert one bucket into StudyItem list."""
     sentences = _deduplicate(_pull_sentences(bucket, min_concept_len))[:max_concepts]
 
-    concepts: list[Concept] = []
+    items: list[StudyItem] = []
     for sentence in sentences:
         clean = _strip_bullet(sentence)
         if len(clean.split()) < min_concept_len:
             continue
-
-        verb  = _pick_verb(clean)
-        name  = _make_name(verb, clean, bucket.heading)
-        kws   = _keywords(clean, bucket.heading, n=5)
-        desc  = clean[:400]
-        if desc and desc[-1] not in ".!?":
-            desc += "."
-        qs = _questions(name, kws)
-
-        concepts.append(Concept(
-            name=name,
-            description=desc,
-            keywords=kws,
-            check_questions=qs,
+        phrase = _topic_phrase(clean, bucket.heading)
+        notes  = clean[:300]
+        if notes and notes[-1] not in ".!?":
+            notes += "."
+        items.append(StudyItem(
+            name=phrase,
+            notes=notes,
             pages=sorted(set(bucket.pages)),
         ))
 
-    return concepts
+    return items
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -668,27 +631,20 @@ def build_topic_tree(
     buckets: list[_Bucket],
     min_concept_len: int = 4,
     max_concepts: int = 8,
-) -> list[Topic]:
-    # Use insertion-ordered dict to preserve document order
-    topics: dict[str, Topic] = {}
+) -> list[StudyTopic]:
+    """Heuristic fallback: assemble buckets into a StudyTopic list."""
+    topics: dict[str, StudyTopic] = {}
 
     for bucket in buckets:
-        concepts = process_bucket(bucket, min_concept_len, max_concepts)
-        if not concepts:
+        items = process_bucket(bucket, min_concept_len, max_concepts)
+        if not items:
             continue
 
-        topic_name    = bucket.parent if bucket.level == 2 else bucket.heading
-        subtopic_name = bucket.heading if bucket.level == 2 else "Overview"
-
+        topic_name = bucket.parent if bucket.level == 2 else bucket.heading
         if topic_name not in topics:
-            topics[topic_name] = Topic(topic=topic_name)
-        topic = topics[topic_name]
+            topics[topic_name] = StudyTopic(topic=topic_name)
 
-        existing = next((st for st in topic.subtopics if st.subtopic == subtopic_name), None)
-        if existing is None:
-            existing = Subtopic(subtopic=subtopic_name)
-            topic.subtopics.append(existing)
-        existing.concepts.extend(concepts)
+        topics[topic_name].subtopics.extend(items)
 
     return list(topics.values())
 
@@ -697,20 +653,14 @@ def build_topic_tree(
 # Step 7 · Write concepts.json
 # ─────────────────────────────────────────────────────────────────────────────
 
-def write_json(topics: list[Topic], source: str, num_pages: int, path: str) -> None:
+def write_json(topics: list[StudyTopic], source: str, num_pages: int, path: str) -> None:
     payload = {
         "source_pdf": os.path.basename(source),
         "num_pages_used": num_pages,
         "topics": [
             {
                 "topic": t.topic,
-                "subtopics": [
-                    {
-                        "subtopic": st.subtopic,
-                        "concepts": [asdict(c) for c in st.concepts],
-                    }
-                    for st in t.subtopics
-                ],
+                "subtopics": [asdict(s) for s in t.subtopics],
             }
             for t in topics
         ],
@@ -723,9 +673,9 @@ def write_json(topics: list[Topic], source: str, num_pages: int, path: str) -> N
 # Step 8 · Write concepts.md
 # ─────────────────────────────────────────────────────────────────────────────
 
-def write_markdown(topics: list[Topic], source: str, num_pages: int, path: str) -> None:
+def write_markdown(topics: list[StudyTopic], source: str, num_pages: int, path: str) -> None:
     out: list[str] = [
-        f"# Concept Map: {os.path.basename(source)}",
+        f"# Study Plan: {os.path.basename(source)}",
         "",
         f"_Pages processed: {num_pages}_",
         "",
@@ -733,25 +683,13 @@ def write_markdown(topics: list[Topic], source: str, num_pages: int, path: str) 
     for ti, topic in enumerate(topics, 1):
         out.append(f"## {ti}. {topic.topic}")
         out.append("")
-        for si, st in enumerate(topic.subtopics, 1):
-            out.append(f"### {ti}.{si} {st.subtopic}")
-            out.append("")
-            for concept in st.concepts:
-                out.append(f"#### {concept.name}")
-                out.append("")
-                out.append(f"> {concept.description}")
-                out.append("")
-                if concept.keywords:
-                    out.append(f"**Keywords:** {', '.join(concept.keywords)}")
-                    out.append("")
-                if concept.pages:
-                    out.append(f"**Pages:** {', '.join(str(p) for p in concept.pages)}")
-                    out.append("")
-                if concept.check_questions:
-                    out.append("**Check your understanding:**")
-                    for q in concept.check_questions:
-                        out.append(f"- {q}")
-                    out.append("")
+        for st in topic.subtopics:
+            page_str = f" _(p. {', '.join(str(p) for p in st.pages)})_" if st.pages else ""
+            if st.notes:
+                out.append(f"- **{st.name}** — {st.notes}{page_str}")
+            else:
+                out.append(f"- **{st.name}**{page_str}")
+        out.append("")
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(out))
 
@@ -811,8 +749,8 @@ def main() -> None:
 
     # 5 & 6. Extract + assemble tree
     if args.llm:
-        print("[5/6] Extracting concepts (1 LLM call for the full PDF)…")
-        topics = _llm_full_pdf(cleaned, args.max_concepts)
+        print("[5/6] Extracting study plan (1 LLM call for the full PDF)…")
+        topics = _llm_study_plan(cleaned)
     else:
         print("[5/6] Extracting concepts (heuristics)…")
         topics = build_topic_tree(
