@@ -32,7 +32,7 @@ from memory_extract import (
     build_profile_context_string,
     extract_turn_insights,
 )
-from memory_update import apply_extract_to_profile, build_memory_preview
+from memory_update import apply_extract_to_profile, build_memory_preview, update_mastery
 from pdf_retriever import build_index, retrieve, format_retrieved_chunks
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -444,6 +444,210 @@ def session_join(code: str):
         return jsonify({"error": f"Session '{code}' not found."}), 404
     logger.info("Session joined code=%s learner_id=%s", code, learner_id)
     return jsonify({"code": code, "learner_id": learner_id})
+
+
+# ── Quiz endpoints ───────────────────────────────────────────────────────────
+
+_QUIZ_GEN_PROMPT = """\
+You are a quiz generator for an adaptive learning system.
+Generate exactly {n} multiple-choice questions{topic_clause}.
+
+Each question MUST:
+- Test understanding or application, not just trivial recall.
+- Have exactly 4 answer options (A–D) where only ONE is definitively correct.
+- Include a `concept_id` (snake_case, 1–4 words) naming the core concept tested.
+- Include a 1-2 sentence `explanation` of why the correct answer is right.
+
+Return a JSON object in this exact shape:
+{{"questions": [
+  {{"question": "...", "options": ["...", "...", "...", "..."], "correct_index": 0,
+    "concept_id": "snake_case", "explanation": "..."}},
+  ...
+]}}
+
+CONTENT:
+{content}
+"""
+
+
+@app.route("/api/quiz/generate", methods=["POST"])
+def quiz_generate():
+    """
+    POST /api/quiz/generate
+    Body: { doc_id?, topic?, n_questions? }
+    Returns: { questions: [{question, options, correct_index, concept_id, explanation, id}] }
+    """
+    body   = request.get_json(silent=True) or {}
+    doc_id = (body.get("doc_id") or "").strip() or None
+    topic  = (body.get("topic") or "").strip() or None
+    n      = max(1, min(int(body.get("n_questions", 5)), 10))
+
+    doc_ctx = _doc_store.get(doc_id) if doc_id else None
+
+    # Build content block for the LLM to write questions about
+    if doc_ctx:
+        if topic:
+            hits    = retrieve(doc_ctx["retrieval_index"], topic, top_k=8)
+            content = format_retrieved_chunks(hits, max_chars=4000)
+            if not content.strip():
+                content = doc_ctx["markdown"][:4000]
+        else:
+            content = doc_ctx["markdown"][:4000]
+    elif topic:
+        content = f"Topic: {topic}"
+    else:
+        return jsonify({"error": "Provide a doc_id or a topic to generate a quiz."}), 400
+
+    topic_clause = f" specifically about '{topic}'" if topic else " based on the content below"
+    prompt = _QUIZ_GEN_PROMPT.format(n=n, topic_clause=topic_clause, content=content)
+
+    try:
+        client = OpenAI()
+        resp = client.chat.completions.create(
+            model=_OPENAI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            response_format={"type": "json_object"},
+        )
+        raw = resp.choices[0].message.content or "{}"
+    except Exception as exc:
+        return jsonify({"error": f"LLM error: {exc}"}), 500
+
+    import json as _json
+    try:
+        parsed = _json.loads(raw)
+        # Model returns {"questions": [...]}, but handle other shapes gracefully
+        if isinstance(parsed, list):
+            questions = parsed
+        else:
+            questions = (
+                parsed.get("questions")
+                or parsed.get("quiz")
+                or next(iter(parsed.values()), [])
+            )
+        if not isinstance(questions, list):
+            raise ValueError("no question array found")
+    except Exception as exc:
+        logger.error("Quiz parse error: %s  raw=%s", exc, raw[:200])
+        return jsonify({"error": "Quiz generation failed — could not parse LLM output."}), 500
+
+    for i, q in enumerate(questions):
+        q["id"] = i
+
+    logger.info("Quiz generated: %d Qs doc_id=%s topic=%s", len(questions), doc_id, topic)
+    return jsonify({"questions": questions, "doc_id": doc_id, "topic": topic})
+
+
+@app.route("/api/quiz/submit", methods=["POST"])
+def quiz_submit():
+    """
+    POST /api/quiz/submit
+    Body: { learner_id, answers: [{id, concept_id, question, options, selected_index, correct_index, explanation}] }
+    Returns: { score, total, score_pct, overall_outcome, results, mastery_deltas, memory_preview }
+    """
+    body       = request.get_json(silent=True) or {}
+    learner_id = (body.get("learner_id") or "").strip() or str(uuid.uuid4())
+    answers    = body.get("answers", [])
+
+    if not answers:
+        return jsonify({"error": "No answers provided."}), 400
+
+    # ── Load profile ──────────────────────────────────────────────────────────
+    mem = get_memory_client()
+    try:
+        profile = mem.get_profile(learner_id)
+    except Exception:
+        profile = {
+            "learner_id": learner_id, "version": 1, "goals": [],
+            "preferences": {"style": "direct", "verbosity": "medium", "pace": "medium"},
+            "concepts": {}, "misconceptions": {}, "concept_edges": {},
+            "recent_summary": "", "updated_at": "",
+        }
+
+    # ── Score each answer ─────────────────────────────────────────────────────
+    results: list[dict] = []
+    # Map concept_id → outcome for the LAST answer on that concept
+    concept_outcomes: dict[str, str] = {}
+    n_correct = 0
+
+    for ans in answers:
+        cid       = (ans.get("concept_id") or "general").lower().replace(" ", "_")
+        selected  = int(ans.get("selected_index", -1))
+        correct   = int(ans.get("correct_index",  -1))
+        is_right  = (selected == correct)
+        if is_right:
+            n_correct += 1
+        concept_outcomes[cid] = "correct" if is_right else "incorrect"
+        results.append({
+            "id":             ans.get("id"),
+            "question":       ans.get("question", ""),
+            "options":        ans.get("options", []),
+            "concept_id":     cid,
+            "selected_index": selected,
+            "correct_index":  correct,
+            "correct":        is_right,
+            "explanation":    ans.get("explanation", ""),
+        })
+
+    score_pct = n_correct / len(answers)
+    if   score_pct >= 0.8: overall = "correct"
+    elif score_pct >= 0.5: overall = "partial"
+    elif score_pct >= 0.25: overall = "confused"
+    else:                   overall = "incorrect"
+
+    # ── Per-concept mastery update ────────────────────────────────────────────
+    concepts_node = profile.setdefault("concepts", {})
+    now           = datetime.now(timezone.utc).isoformat()
+    mastery_before: dict[str, float] = {}
+    mastery_after:  dict[str, float] = {}
+
+    for cid, outcome in concept_outcomes.items():
+        entry = concepts_node.get(cid)
+        if entry is None:
+            entry = {
+                "mastery": 0.0, "attempts": 0, "correct_attempts": 0,
+                "last_seen": now, "last_outcome": outcome, "error_pattern": "",
+            }
+            concepts_node[cid] = entry
+        mastery_before[cid] = round(entry["mastery"], 3)
+        entry["mastery"]          = update_mastery(entry["mastery"], outcome)
+        entry["attempts"]        += 1
+        entry["correct_attempts"] += (1 if outcome == "correct" else 0)
+        entry["last_seen"]        = now
+        entry["last_outcome"]     = outcome
+        mastery_after[cid]        = round(entry["mastery"], 3)
+        logger.info("Quiz mastery %-30s %s  %.3f → %.3f",
+                    cid, outcome, mastery_before[cid], mastery_after[cid])
+
+    profile["updated_at"]     = now
+    profile["recent_summary"] = (
+        f"Quiz: {n_correct}/{len(answers)} correct ({int(score_pct*100)}%). "
+        f"Concepts: {', '.join(list(concept_outcomes.keys())[:4])}."
+    )[:300]
+
+    # ── Persist ───────────────────────────────────────────────────────────────
+    try:
+        mem.put_profile(learner_id, profile)
+    except Exception as exc:
+        logger.error("quiz put_profile failed: %s", exc)
+
+    memory_preview = build_memory_preview(profile)
+    logger.info("Quiz submitted learner=%s score=%d/%d overall=%s",
+                learner_id, n_correct, len(answers), overall)
+
+    return jsonify({
+        "learner_id":      learner_id,
+        "score":           n_correct,
+        "total":           len(answers),
+        "score_pct":       round(score_pct * 100),
+        "overall_outcome": overall,
+        "results":         results,
+        "mastery_deltas":  {
+            cid: {"before": mastery_before[cid], "after": mastery_after[cid]}
+            for cid in concept_outcomes
+        },
+        "memory_preview":  memory_preview,
+    })
 
 
 # ── Knowledge-graph endpoint ─────────────────────────────────────────────────
