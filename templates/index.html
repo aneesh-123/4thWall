@@ -243,6 +243,15 @@
     .msg .bubble p { margin-bottom: 6px; }
     .msg .bubble p:last-child { margin-bottom: 0; }
     .msg-typing .bubble { color: #aaa; font-style: italic; }
+    .msg.system-msg .bubble {
+      background: #fff8e1; border-color: #f4c542; color: #7a5a00;
+      font-size: 0.82rem; font-style: italic;
+    }
+    .sm-badge {
+      display: inline-block; margin-top: 6px; font-size: 0.72rem;
+      background: #e8f5e9; color: #2e7d32; border-radius: 4px;
+      padding: 2px 7px; font-weight: 600; letter-spacing: 0.03em;
+    }
 
     #chatInput {
       display: flex; gap: 10px; align-items: flex-end;
@@ -376,6 +385,7 @@
         <div id="pdfBanner" style="display:none;background:#f0f0ff;border:1px solid #c7c7ff;border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:0.84rem;color:#4338ca;align-items:center;gap:8px">
           <span>📄</span>
           <span>Tutoring based on: <strong id="pdfBannerName"></strong></span>
+          <span id="smStatus" style="font-size:0.75rem;padding:2px 7px;border-radius:4px;font-weight:600"></span>
           <button onclick="clearPdfContext()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem" title="Remove PDF context">✕</button>
         </div>
 
@@ -501,7 +511,7 @@
       if (data.doc_id) {
         currentDocId   = data.doc_id;
         currentDocName = selectedFile.name;
-        showPdfBanner(currentDocName);
+        showPdfBanner(currentDocName, data.sm_uploaded);
         // Prompt user to switch to chat
         document.getElementById("switchChatHint").style.display = "block";
       }
@@ -529,9 +539,17 @@
   function hideResults() { resultsCard.style.display = "none"; }
 
   // ── PDF → Chat banner helpers ─────────────────────────────────────────────
-  function showPdfBanner(name) {
+  function showPdfBanner(name, smUploaded) {
     const banner = document.getElementById("pdfBanner");
     document.getElementById("pdfBannerName").textContent = name;
+    const statusEl = document.getElementById("smStatus");
+    if (smUploaded) {
+      statusEl.textContent = "🔍 Supermemory indexed";
+      statusEl.style.cssText = "background:#e8f5e9;color:#2e7d32;padding:2px 7px;border-radius:4px;font-weight:600";
+    } else {
+      statusEl.textContent = "⚠️ Local search only";
+      statusEl.style.cssText = "background:#fff8e1;color:#7a5a00;padding:2px 7px;border-radius:4px;font-weight:600";
+    }
     banner.style.display = "flex";
     document.getElementById("welcomeText").textContent =
       `Hi! I've loaded "${name}". Ask me anything about it — I'll adapt to what you know.`;
@@ -579,12 +597,12 @@
   });
   sendBtn.addEventListener("click", sendMessage);
 
-  function appendBubble(role, text) {
+  function appendBubble(role, text, badge = null) {
     const div = document.createElement("div");
-    div.className = "msg" + (role === "user" ? " user" : "");
+    div.className = "msg" + (role === "user" ? " user" : role === "system" ? " system-msg" : "");
     const avatar = document.createElement("div");
     avatar.className = "avatar";
-    avatar.textContent = role === "user" ? "🧑" : "🤖";
+    avatar.textContent = role === "user" ? "🧑" : role === "system" ? "ℹ️" : "🤖";
     const bubble = document.createElement("div");
     bubble.className = "bubble";
     // Render markdown in tutor messages
@@ -592,6 +610,13 @@
       bubble.innerHTML = marked.parse(text);
     } else {
       bubble.textContent = text;
+    }
+    // Optional badge (e.g. "🔍 Supermemory grounded")
+    if (badge) {
+      const badgeEl = document.createElement("span");
+      badgeEl.className = "sm-badge";
+      badgeEl.textContent = badge;
+      bubble.appendChild(badgeEl);
     }
     div.appendChild(avatar);
     div.appendChild(bubble);
@@ -687,12 +712,21 @@
         return;
       }
 
+      // Warn if PDF context was lost (e.g. server restarted)
+      if (currentDocId && data.doc_found === false) {
+        appendBubble("system",
+          "⚠️ The server no longer has this PDF in memory (it may have restarted). " +
+          "Please re-upload the PDF to resume grounded tutoring.");
+        clearPdfContext();
+      }
+
       // Persist IDs
       learnerId = data.learner_id;
       sessionId = data.session_id;
       learnerIdEl.textContent = "ID: " + learnerId.slice(0, 18) + "…";
 
-      appendBubble("assistant", data.assistant);
+      // Show semantic-grounding badge on the bubble if Supermemory was used
+      appendBubble("assistant", data.assistant, data.sm_grounded ? "🔍 Supermemory grounded" : null);
       updateMemory(data.memory_preview);
 
     } catch (err) {

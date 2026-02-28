@@ -191,6 +191,80 @@ class MemoryClient:
             logger.warning("query_recent_events failed for %s: %s", learner_id, exc)
             return []
 
+    # ── PDF document upload & semantic search ─────────────────────────────────
+
+    def upload_pdf(self, doc_id: str, pdf_path: str, filename: str) -> str | None:
+        """
+        Upload a PDF to Supermemory so it can be semantically searched later.
+
+        The document is tagged with ``doc:{doc_id}`` so it can be scoped
+        independently from learner memory.  Returns Supermemory's document ID
+        on success, ``None`` on failure.
+        """
+        import base64
+
+        doc_tag = f"doc:{doc_id}"
+        try:
+            with open(pdf_path, "rb") as fh:
+                b64_content = base64.b64encode(fh.read()).decode("utf-8")
+            result = self._client.add(
+                content=b64_content,
+                content_type="pdf",
+                title=filename,
+                container_tags=[doc_tag],
+            )
+            sm_id = (
+                getattr(result, "id", None)
+                or getattr(result, "document_id", None)
+            )
+            logger.info(
+                "upload_pdf OK  doc_id=%s  filename=%s  sm_id=%s",
+                doc_id, filename, sm_id,
+            )
+            return sm_id
+        except Exception as exc:
+            logger.error("upload_pdf failed  doc_id=%s: %s", doc_id, exc)
+            return None
+
+    def search_pdf(
+        self, doc_id: str, query: str, top_k: int = 6
+    ) -> list[str]:
+        """
+        Semantic search over the PDF uploaded with :meth:`upload_pdf`.
+
+        Uses Supermemory's hybrid retrieval (vector + BM25 re-ranking) against
+        the ``doc:{doc_id}`` container tag.  Returns a list of text chunks,
+        ordered by relevance.  Returns an empty list on any error so callers
+        can degrade gracefully.
+        """
+        doc_tag = f"doc:{doc_id}"
+        try:
+            results = self._client.search.documents(
+                q=query,
+                container_tags=[doc_tag],
+                limit=top_k,
+            )
+            docs = getattr(results, "results", None) or []
+            chunks: list[str] = []
+            for doc in docs:
+                # Supermemory v3: prefer the `chunk` field (document content),
+                # then `memory` (extracted facts), then fall back to _doc_content
+                text = (
+                    getattr(doc, "chunk", None)
+                    or getattr(doc, "memory", None)
+                    or self._doc_content(doc)
+                )
+                if text and isinstance(text, str) and text.strip():
+                    chunks.append(text.strip())
+            logger.debug(
+                "search_pdf  doc_id=%s  query=%r  hits=%d",
+                doc_id, query[:60], len(chunks),
+            )
+            return chunks
+        except Exception as exc:
+            logger.warning("search_pdf failed  doc_id=%s: %s", doc_id, exc)
+            return []
+
 
 # ── Module-level singleton (lazy) ─────────────────────────────────────────────
 

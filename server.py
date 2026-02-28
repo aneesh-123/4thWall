@@ -94,14 +94,25 @@ def extract():
         doc_id          = str(uuid.uuid4())
         retrieval_index = build_index(cleaned)   # reuse already-cleaned pages
         _doc_store[doc_id] = {
+            "doc_id":          doc_id,
             "filename":        pdf_file.filename,
             "markdown":        md_content,
             "pages":           len(pages),
             "retrieval_index": retrieval_index,
+            "sm_uploaded":     False,   # set to True after Supermemory upload
         }
         logger.info("Stored doc_id=%s filename=%s chunks=%d",
                     doc_id, pdf_file.filename,
                     len(retrieval_index.get("chunks", [])))
+
+        # Upload PDF to Supermemory for persistent semantic search (Super RAG).
+        # Must happen before the finally-block deletes the temp file.
+        try:
+            mem_client = get_memory_client()
+            mem_client.upload_pdf(doc_id, tmp_pdf.name, pdf_file.filename)
+            _doc_store[doc_id]["sm_uploaded"] = True
+        except Exception as _upload_exc:
+            logger.warning("Supermemory PDF upload skipped: %s", _upload_exc)
 
         return jsonify({
             "doc_id":          doc_id,
@@ -109,6 +120,7 @@ def extract():
             "pages_processed": len(pages),
             "topics_count":    len(topics),
             "subtopics_count": total_subtopics,
+            "sm_uploaded":     _doc_store[doc_id]["sm_uploaded"],
         })
 
     except NotImplementedError:
@@ -160,41 +172,55 @@ INSTRUCTIONS (follow these carefully every turn):
 _DOC_BLOCK_TEMPLATE = """
 DOCUMENT CONTEXT — "{filename}":
 
-STUDY PLAN (topics extracted from the PDF):
+STUDY PLAN (outline extracted from the PDF):
 {markdown}
 
-MOST RELEVANT PASSAGES FROM THE PDF (retrieved for this question):
+--- RETRIEVED PASSAGES (TF-IDF lexical search) ---
 {passages}
 
-(End of document context — base ALL answers strictly on the above content.)
+--- RETRIEVED PASSAGES (Supermemory semantic search) ---
+{semantic_passages}
+
+(End of document context — base ALL answers strictly on the above content.
+ Cite the page numbers from TF-IDF excerpts where possible.)
 """
 
 _SCOPE_WITH_DOC    = "Answer ONLY questions related to the document above. If the learner asks about something outside it, gently redirect them back to the document."
 _SCOPE_WITHOUT_DOC = "Answer questions on any topic the learner brings up."
 
 
-def _build_tutor_system_prompt(profile: dict, doc: dict | None = None, query: str = "") -> str:
+def _build_tutor_system_prompt(
+    profile: dict,
+    doc: dict | None = None,
+    query: str = "",
+    semantic_passages: str = "",
+) -> str:
     profile_block = build_profile_context_string(profile) or "(first session — no prior data)"
     if doc:
-        # Retrieve top relevant passages for this specific question
+        # TF-IDF lexical retrieval (local, synchronous)
         passages = ""
         idx = doc.get("retrieval_index")
         if idx and query:
-            hits = retrieve(idx, query, top_k=6)
-            passages = format_retrieved_chunks(hits, max_chars=3500)
-            logger.debug("Retrieved %d chunks for query: %s", len(hits), query[:80])
+            hits = retrieve(idx, query, top_k=5)
+            passages = format_retrieved_chunks(hits, max_chars=2500)
+            logger.debug("TF-IDF: %d chunks for query: %s", len(hits), query[:80])
         if not passages:
-            passages = "(no specific passages retrieved — use the study plan above)"
+            passages = "(no TF-IDF passages retrieved)"
 
-        # Include a short study-plan overview (cap at 1500 chars)
-        md_overview = doc["markdown"][:1500]
-        if len(doc["markdown"]) > 1500:
-            md_overview += "\n…(truncated — full content available via retrieved passages)"
+        # Supermemory semantic passages (passed in from the caller)
+        if not semantic_passages:
+            semantic_passages = "(no semantic passages retrieved — PDF may still be indexing)"
+
+        # Study-plan overview (capped; detail comes from retrieved passages)
+        md_overview = doc["markdown"][:1200]
+        if len(doc["markdown"]) > 1200:
+            md_overview += "\n…(full outline available via retrieved passages)"
 
         doc_block = _DOC_BLOCK_TEMPLATE.format(
             filename=doc["filename"],
             markdown=md_overview,
             passages=passages,
+            semantic_passages=semantic_passages,
         )
         scope_instruction = _SCOPE_WITH_DOC
     else:
@@ -275,8 +301,24 @@ def chat_turn():
                    "goals": [], "concepts": {}, "misconceptions": {},
                    "recent_summary": "", "updated_at": ""}
 
-    # ── Step 2: generate tutor response conditioned on profile + PDF ─────────
-    system_prompt = _build_tutor_system_prompt(profile, doc=doc_ctx, query=message)
+    # ── Step 2a: Supermemory semantic search over the uploaded PDF ─────────
+    semantic_passages = ""
+    if doc_ctx and doc_ctx.get("sm_uploaded"):
+        try:
+            sm_hits = mem.search_pdf(doc_id, message, top_k=5)
+            if sm_hits:
+                semantic_passages = "\n\n".join(
+                    f"[Semantic chunk {i+1}]\n{chunk}"
+                    for i, chunk in enumerate(sm_hits)
+                )
+                logger.info("Supermemory PDF search: %d chunks for doc_id=%s", len(sm_hits), doc_id)
+        except Exception as _sm_exc:
+            logger.warning("Supermemory PDF search failed: %s", _sm_exc)
+
+    # ── Step 2b: build system prompt and generate LLM response ───────────
+    system_prompt = _build_tutor_system_prompt(
+        profile, doc=doc_ctx, query=message, semantic_passages=semantic_passages
+    )
     try:
         assistant_reply = _generate_tutor_response(system_prompt, message)
     except Exception as exc:
@@ -352,6 +394,8 @@ def chat_turn():
         "session_id":     session_id,
         "assistant":      assistant_reply,
         "memory_preview": memory_preview,
+        "doc_found":      doc_ctx is not None,
+        "sm_grounded":    bool(semantic_passages),
     })
 
 
