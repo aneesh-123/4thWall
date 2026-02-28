@@ -533,6 +533,26 @@
 <!-- D3.js for knowledge graph -->
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script>
+  // ── Safe fetch: avoid "Unexpected token '<'" when server returns HTML (404/500 or wrong origin)
+  async function fetchJson(url, options = {}) {
+    const res = await fetch(url, options);
+    const text = await res.text();
+    const trimmed = text.trim().toLowerCase();
+    if (trimmed.startsWith("<!") || trimmed.startsWith("<html")) {
+      throw new Error(
+        "Server returned a page instead of data. " +
+        "Open the app at http://localhost:5000 (not as a file) and ensure the server is running (python server.py)."
+      );
+    }
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      throw new Error("Invalid response from server: " + (e.message || "not valid JSON"));
+    }
+    return { res, data };
+  }
+
   // ── Tab switching ─────────────────────────────────────────────────────────
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -585,8 +605,7 @@
     const form = new FormData();
     form.append("pdf", selectedFile);
     try {
-      const res  = await fetch("/api/extract", { method: "POST", body: form });
-      const data = await res.json();
+      const { res, data } = await fetchJson("/api/extract", { method: "POST", body: form });
       if (!res.ok || data.error) { showError(data.error || "An unexpected error occurred."); return; }
       showResults(data);
       // Link to chat
@@ -694,8 +713,7 @@
   createSessionBtn.addEventListener("click", async () => {
     createSessionBtn.disabled = true;
     try {
-      const res  = await fetch("/api/session/create", { method: "POST" });
-      const data = await res.json();
+      const { res, data } = await fetchJson("/api/session/create", { method: "POST" });
       if (data.error) { alert(data.error); return; }
       _applySession(data.code, data.learner_id);
       // auto-switch to chat tab
@@ -712,8 +730,7 @@
     if (!code) { joinCodeInput.focus(); return; }
     joinSessionBtn.disabled = true;
     try {
-      const res  = await fetch("/api/session/join/" + code);
-      const data = await res.json();
+      const { res, data } = await fetchJson("/api/session/join/" + code);
       if (!res.ok || data.error) { alert(data.error || "Session not found."); return; }
       _applySession(data.code, data.learner_id);
       joinCodeInput.value = "";
@@ -849,12 +866,11 @@
     outcomeSelect.value = "";
 
     try {
-      const res  = await fetch("/chat/turn", {
+      const { res, data } = await fetchJson("/chat/turn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
       removeTyping();
 
       if (!res.ok || data.error) {
@@ -902,8 +918,7 @@
       return;
     }
     try {
-      const res  = await fetch("/api/knowledge-graph/" + learnerId);
-      const data = await res.json();
+      const { res, data } = await fetchJson("/api/knowledge-graph/" + learnerId);
       _renderGraphFromPreview(data);
     } catch(e) {
       console.warn("Graph fetch failed", e);
@@ -1076,12 +1091,11 @@
     status.textContent = "";
 
     try {
-      const res  = await fetch("/api/quiz/generate", {
+      const { res, data } = await fetchJson("/api/quiz/generate", {
         method:  "POST",
         headers: {"Content-Type": "application/json"},
         body:    JSON.stringify({ doc_id: currentDocId || null, topic: topic || null, n_questions: n }),
       });
-      const data = await res.json();
       if (!res.ok || data.error) {
         status.textContent = "⚠️ " + (data.error || "Failed to generate quiz.");
         status.style.color = "#ef4444";
@@ -1153,12 +1167,11 @@
     submitBtn.textContent = "Submitting…";
 
     try {
-      const res  = await fetch("/api/quiz/submit", {
+      const { res, data } = await fetchJson("/api/quiz/submit", {
         method:  "POST",
         headers: {"Content-Type": "application/json"},
         body:    JSON.stringify({ learner_id: learnerId, answers }),
       });
-      const data = await res.json();
       if (!res.ok || data.error) { alert(data.error || "Submission failed."); return; }
 
       // Reveal per-question feedback inline

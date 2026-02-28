@@ -14,8 +14,29 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 
-from dotenv import load_dotenv
-load_dotenv()  # Load environment variables from .env file if present
+# Load .env manually so Windows env-var limits / invalid-arg don't crash the server
+def _load_dotenv_safe():
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    if not os.path.isfile(env_path):
+        return
+    try:
+        with open(env_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key, value = key.strip(), value.strip().strip('"').strip("'")
+                if not key or "\x00" in value:
+                    continue
+                try:
+                    os.environ[key] = value
+                except OSError:
+                    pass  # Windows can reject long or certain values; skip
+    except Exception:
+        pass
+
+_load_dotenv_safe()
 
 from flask import Flask, jsonify, render_template, request
 from openai import OpenAI
