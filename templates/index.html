@@ -1023,6 +1023,227 @@
         .attr("y", d => d.y + rFn(d) + 13);
     });
   }
+
+  // ── Quiz ──────────────────────────────────────────────────────────────────────
+
+  let _quizQuestions = [];
+
+  // Wire static buttons
+  document.getElementById("quizOpenBtn")   .addEventListener("click", openQuiz);
+  document.getElementById("quizCloseBtn")  .addEventListener("click", closeQuiz);
+  document.getElementById("quizGenerateBtn").addEventListener("click", generateQuiz);
+  document.getElementById("quizSubmitBtn") .addEventListener("click", submitQuiz);
+  document.getElementById("quizResetBtn")  .addEventListener("click", resetQuiz);
+  document.getElementById("quizTopic")     .addEventListener("keydown", e => { if (e.key === "Enter") generateQuiz(); });
+
+  function openQuiz() {
+    document.getElementById("quizPanel").style.display = "block";
+    document.getElementById("quizTopic").focus();
+  }
+
+  function closeQuiz() {
+    document.getElementById("quizPanel").style.display = "none";
+  }
+
+  function resetQuiz() {
+    _quizQuestions = [];
+    document.getElementById("quizSetup").style.display     = "block";
+    document.getElementById("quizStatus").textContent      = "";
+    document.getElementById("quizStatus").style.color      = "";
+    document.getElementById("quizQuestions").style.display = "none";
+    document.getElementById("quizQuestions").innerHTML     = "";
+    document.getElementById("quizSubmitRow").style.display = "none";
+    document.getElementById("quizResults").style.display   = "none";
+    document.getElementById("quizResults").innerHTML       = "";
+    document.getElementById("quizGenerateBtn").disabled    = false;
+    document.getElementById("quizGenerateBtn").textContent = "Generate ✨";
+  }
+
+  async function generateQuiz() {
+    const topic  = document.getElementById("quizTopic").value.trim();
+    const n      = parseInt(document.getElementById("quizN").value);
+    const btn    = document.getElementById("quizGenerateBtn");
+    const status = document.getElementById("quizStatus");
+
+    if (!currentDocId && !topic) {
+      status.textContent = "⚠️ Upload a PDF first, or type a topic to quiz on.";
+      status.style.color = "#ef4444";
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = "Generating…";
+    status.textContent = "";
+
+    try {
+      const res  = await fetch("/api/quiz/generate", {
+        method:  "POST",
+        headers: {"Content-Type": "application/json"},
+        body:    JSON.stringify({ doc_id: currentDocId || null, topic: topic || null, n_questions: n }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        status.textContent = "⚠️ " + (data.error || "Failed to generate quiz.");
+        status.style.color = "#ef4444";
+        btn.disabled = false; btn.textContent = "Generate ✨";
+        return;
+      }
+      _quizQuestions = data.questions || [];
+      if (!_quizQuestions.length) {
+        status.textContent = "⚠️ No questions returned. Try a different topic.";
+        status.style.color = "#ef4444";
+        btn.disabled = false; btn.textContent = "Generate ✨";
+        return;
+      }
+      _renderQuizQuestions(_quizQuestions);
+      document.getElementById("quizSetup").style.display     = "none";
+      document.getElementById("quizQuestions").style.display = "block";
+      document.getElementById("quizSubmitRow").style.display = "flex";
+    } catch (e) {
+      status.textContent = "⚠️ Error: " + e.message;
+      status.style.color = "#ef4444";
+      btn.disabled = false; btn.textContent = "Generate ✨";
+    }
+  }
+
+  function _renderQuizQuestions(qs) {
+    const container = document.getElementById("quizQuestions");
+    container.innerHTML = qs.map((q, qi) => `
+      <div id="quiz-q-${qi}" style="margin-bottom:14px;padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">
+        <p style="margin:0 0 10px;font-weight:600;font-size:0.9rem;color:#1f2937">${qi + 1}. ${_esc(q.question)}</p>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${q.options.map((opt, oi) => `
+            <label id="quiz-lbl-${qi}-${oi}"
+              style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;cursor:pointer;font-size:0.87rem;color:#374151;transition:background 0.12s">
+              <input type="radio" name="quiz-q-${qi}" value="${oi}" style="margin-top:2px;accent-color:#4f46e5;flex-shrink:0" />
+              <span><strong>${String.fromCharCode(65 + oi)}.</strong> ${_esc(opt)}</span>
+            </label>
+          `).join("")}
+        </div>
+        <div id="quiz-fb-${qi}" style="display:none;margin-top:8px;font-size:0.82rem;padding:7px 10px;border-radius:6px;line-height:1.5"></div>
+      </div>
+    `).join("");
+  }
+
+  async function submitQuiz() {
+    if (!_quizQuestions.length) return;
+    const submitBtn = document.getElementById("quizSubmitBtn");
+
+    // Collect answers — guard against unanswered questions
+    const answers = [];
+    for (let qi = 0; qi < _quizQuestions.length; qi++) {
+      const sel = document.querySelector(`input[name="quiz-q-${qi}"]:checked`);
+      if (!sel) { alert(`Please answer question ${qi + 1} before submitting.`); return; }
+      const q = _quizQuestions[qi];
+      answers.push({
+        id:             q.id,
+        question:       q.question,
+        options:        q.options,
+        concept_id:     q.concept_id,
+        selected_index: parseInt(sel.value),
+        correct_index:  q.correct_index,
+        explanation:    q.explanation || "",
+      });
+    }
+
+    // Ensure learner ID exists (same logic as sendMessage)
+    if (!learnerId) learnerId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+
+    submitBtn.disabled    = true;
+    submitBtn.textContent = "Submitting…";
+
+    try {
+      const res  = await fetch("/api/quiz/submit", {
+        method:  "POST",
+        headers: {"Content-Type": "application/json"},
+        body:    JSON.stringify({ learner_id: learnerId, answers }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) { alert(data.error || "Submission failed."); return; }
+
+      // Reveal per-question feedback inline
+      for (let qi = 0; qi < data.results.length; qi++) {
+        const r   = data.results[qi];
+        const fb  = document.getElementById(`quiz-fb-${qi}`);
+        if (!fb) continue;
+        fb.style.display    = "block";
+        fb.style.background = r.correct ? "#d1fae5" : "#fee2e2";
+        fb.style.color      = r.correct ? "#065f46" : "#991b1b";
+        fb.innerHTML = (r.correct
+          ? "✅ Correct!"
+          : `❌ Incorrect — correct answer: <strong>${String.fromCharCode(65 + r.correct_index)}. ${_esc((r.options || [])[r.correct_index] || "")}</strong>`
+        ) + (r.explanation ? `<br><span style="opacity:0.8">${_esc(r.explanation)}</span>` : "");
+
+        // Colour the option labels
+        for (let oi = 0; oi < 4; oi++) {
+          const lbl = document.getElementById(`quiz-lbl-${qi}-${oi}`);
+          if (!lbl) continue;
+          if (oi === r.correct_index)                    { lbl.style.background = "#d1fae5"; lbl.style.borderColor = "#34d399"; }
+          if (oi === r.selected_index && !r.correct)     { lbl.style.background = "#fee2e2"; lbl.style.borderColor = "#f87171"; }
+        }
+        // Disable inputs so user can't change answers
+        document.querySelectorAll(`input[name="quiz-q-${qi}"]`).forEach(inp => inp.disabled = true);
+      }
+
+      // Show summary + mastery deltas
+      _renderQuizResults(data);
+      updateMemory(data.memory_preview);
+
+      document.getElementById("quizSubmitRow").style.display = "none";
+      document.getElementById("quizResults").style.display   = "block";
+
+      // If no learner ID was set before, persist it
+      if (!learnerId) learnerId = data.learner_id;
+      learnerIdEl.textContent = sessionCode
+        ? "Session: " + sessionCode + " · ID: " + learnerId.slice(0, 8) + "…"
+        : "ID: " + (learnerId || "").slice(0, 18) + "…";
+
+    } catch (e) {
+      alert("Error submitting quiz: " + e.message);
+    } finally {
+      submitBtn.disabled    = false;
+      submitBtn.textContent = "Submit Quiz →";
+    }
+  }
+
+  function _renderQuizResults(data) {
+    const pct   = data.score_pct;
+    const emoji = pct >= 80 ? "🎉" : pct >= 60 ? "👍" : pct >= 40 ? "🤔" : "😓";
+    const clr   = pct >= 80 ? "#065f46" : pct >= 60 ? "#1e40af" : pct >= 40 ? "#92400e" : "#991b1b";
+    const bg    = pct >= 80 ? "#d1fae5" : pct >= 60 ? "#dbeafe" : pct >= 40 ? "#fef3c7" : "#fee2e2";
+
+    const deltasHtml = Object.entries(data.mastery_deltas || {}).map(([cid, d]) => {
+      const diff  = d.after - d.before;
+      const arrow = diff > 0 ? "↑" : diff < 0 ? "↓" : "→";
+      const dclr  = diff > 0 ? "#059669" : diff < 0 ? "#dc2626" : "#6b7280";
+      const ppts  = Math.round(Math.abs(diff) * 100);
+      return `<span style="display:inline-block;margin:2px 4px;font-size:0.75rem;background:#f3f4f6;padding:2px 8px;border-radius:4px;color:#374151">
+        ${_esc(cid.replace(/_/g, " "))} <span style="color:${dclr};font-weight:700">${arrow}${ppts}%</span>
+      </span>`;
+    }).join("");
+
+    document.getElementById("quizResults").innerHTML = `
+      <div style="text-align:center;padding:16px 12px;background:${bg};border-radius:8px;margin-bottom:10px">
+        <div style="font-size:2rem">${emoji}</div>
+        <div style="font-size:1.35rem;font-weight:700;color:${clr};margin-top:4px">${data.score} / ${data.total} correct (${pct}%)</div>
+        <div style="font-size:0.82rem;color:#555;margin-top:2px;text-transform:capitalize">Overall: ${data.overall_outcome}</div>
+      </div>
+      ${deltasHtml ? `<div style="margin:8px 0 12px"><div style="font-size:0.75rem;font-weight:700;color:#6b7280;margin-bottom:5px;letter-spacing:0.04em">MASTERY CHANGES</div>${deltasHtml}</div>` : ""}
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button onclick="resetQuiz()"
+          style="flex:1;padding:8px;background:#4f46e5;color:#fff;border:none;border-radius:6px;font-size:0.85rem;cursor:pointer;font-weight:600">🔄 New Quiz</button>
+        <button onclick="closeQuiz()"
+          style="flex:1;padding:8px;background:#e5e7eb;color:#374151;border:none;border-radius:6px;font-size:0.85rem;cursor:pointer">Close</button>
+      </div>
+    `;
+  }
+
+  function _esc(s) {
+    return String(s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
 </script>
 </body>
 </html>
