@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -34,7 +34,7 @@
     };
   </script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <title>4thWall - AI Tutor</title>
+  <title>4thWall — AI Tutor</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -45,7 +45,7 @@
       min-height: 100vh;
     }
 
-    /* â”€â”€ Header â”€â”€ */
+    /* ── Header ── */
     header {
       background: #1a1a1a;
       color: #fff;
@@ -57,10 +57,10 @@
     header h1 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.3px; }
     header span { font-size: 1.4rem; }
 
-    /* â”€â”€ Layout â”€â”€ */
+    /* ── Layout ── */
     .page { max-width: 860px; margin: 40px auto; padding: 0 20px 80px; }
 
-    /* â”€â”€ Card â”€â”€ */
+    /* ── Card ── */
     .card {
       background: #fff;
       border-radius: 12px;
@@ -70,7 +70,7 @@
     }
     .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 18px; color: #444; }
 
-    /* â”€â”€ Drop zone â”€â”€ */
+    /* ── Drop zone ── */
     #dropZone {
       border: 2px dashed #ccc;
       border-radius: 10px;
@@ -106,7 +106,7 @@
     }
     #fileInfo .remove-btn:hover { color: #e53e3e; }
 
-    /* â”€â”€ Options â”€â”€ */
+    /* ── Options ── */
     .options { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
 
     .toggle-row {
@@ -137,7 +137,7 @@
       padding: 4px 8px; font-size: 0.85rem; background: #fff;
     }
 
-    /* â”€â”€ Button â”€â”€ */
+    /* ── Button ── */
     #processBtn {
       display: block; width: 100%; margin-top: 20px;
       background: #4f46e5; color: #fff;
@@ -148,7 +148,7 @@
     #processBtn:hover:not(:disabled) { background: #4338ca; }
     #processBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* â”€â”€ Loading â”€â”€ */
+    /* ── Loading ── */
     #loading {
       display: none;
       text-align: center;
@@ -164,7 +164,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     #loading p { color: #666; font-size: 0.9rem; }
 
-    /* â”€â”€ Error â”€â”€ */
+    /* ── Error ── */
     #errorBox {
       display: none;
       background: #fff5f5; border: 1px solid #fed7d7;
@@ -173,7 +173,7 @@
       white-space: pre-wrap;
     }
 
-    /* â”€â”€ Stats bar â”€â”€ */
+    /* ── Stats bar ── */
     #statsBar {
       display: none;
       gap: 0;
@@ -191,7 +191,7 @@
     .stat .num { font-size: 1.6rem; font-weight: 700; color: #4f46e5; }
     .stat .lbl { font-size: 0.75rem; color: #888; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* â”€â”€ Download â”€â”€ */
+    /* ── Download ── */
     #downloadBtn {
       display: none;
       float: right;
@@ -207,7 +207,7 @@
     }
     #downloadBtn:hover { background: #e0e0ff; }
 
-    /* â”€â”€ Markdown output â”€â”€ */
+    /* ── Markdown output ── */
     #mdOutput {
       display: none;
       line-height: 1.75;
@@ -230,7 +230,7 @@
     #mdOutput em { color: #666; font-size: 0.88rem; }
     #mdOutput hr { border: none; border-top: 1px solid #eee; margin: 20px 0; }
 
-    /* â”€â”€ Tabs â”€â”€ */
+    /* ── Tabs ── */
     .tabs {
       display: flex; gap: 0;
       border-bottom: 2px solid #e0e0e0;
@@ -247,7 +247,7 @@
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
-    /* â”€â”€ Chat â”€â”€ */
+    /* ── Chat ── */
     #chatWindow {
       height: 420px; overflow-y: auto;
       border: 1px solid #e0e0e0; border-radius: 10px;
@@ -340,12 +340,12 @@
     .pref-val { font-weight: 600; color: #4f46e5; }
     #learnerId { font-size: 0.7rem; color: #bbb; word-break: break-all; margin-top: 6px; }
 
-    /* â”€â”€ Mastery tab â”€â”€ */
+    /* ── Mastery tab ── */
     .mastery-concept-row { transition: background 0.15s; }
     .mastery-concept-row:hover { filter: brightness(0.97); }
     #masteryRows { max-height: 560px; overflow-y: auto; padding-right: 2px; }
 
-    /* â”€â”€ Quiz modal â”€â”€ */
+    /* ── Quiz modal ── */
     #quizModal {
       display: none; position: fixed; inset: 0; z-index: 1000;
       background: rgba(0,0,0,0.55); overflow-y: auto;
@@ -357,7 +357,7 @@
       margin: auto; padding: 28px 30px 24px;
       box-shadow: 0 24px 60px rgba(0,0,0,0.3); position: relative;
     }
-    /* â”€â”€ Profile / Groups â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Profile / Groups ──────────────────────────────────────────── */
     .group-card {
       background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;
       padding:16px 18px;margin-bottom:14px;
@@ -385,11 +385,6 @@
       background:#fef2f2;color:#dc2626;border-color:#fecaca;
     }
 
-    /* Design Notes
-       - Core tokens live in :root for the purple/blue wash, glass cards, and gradient CTAs.
-       - Reusable primitives are .app-shell, .glass-card, .gradient-btn, .secondary-btn, and .stat-card.
-       - Tweak brand intensity by adjusting --brand-grad, --brand-grad-soft, and --card-shadow below.
-    */
     /* Premium redesign override layer */
     :root {
       --bg-wash:
@@ -403,7 +398,6 @@
       --text-soft: #64748b;
       --brand-grad: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 44%, #3b82f6 100%);
       --brand-grad-soft: linear-gradient(135deg, rgba(124,58,237,0.10) 0%, rgba(59,130,246,0.12) 100%);
-      --shell-border: rgba(255,255,255,0.68);
     }
 
     body {
@@ -421,12 +415,11 @@
       mix-blend-mode: soft-light;
     }
 
-    .app-shell,
     header {
       max-width: 1180px;
       margin: 20px auto 0;
       padding: 18px 22px !important;
-      border: 1px solid var(--shell-border);
+      border: 1px solid rgba(255,255,255,0.72);
       border-radius: 26px;
       background: rgba(255,255,255,0.74) !important;
       backdrop-filter: blur(20px);
@@ -464,7 +457,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .glass-card,
     .card,
     #quizModalInner {
       background: var(--card-bg) !important;
@@ -478,47 +470,13 @@
       letter-spacing: -0.03em;
     }
 
-    .gradient-btn {
-      background: var(--brand-grad) !important;
-      color: #fff !important;
-      border: none !important;
-      border-radius: 18px !important;
-      box-shadow: 0 18px 34px -20px rgba(124,58,237,0.55);
-      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease !important;
-    }
-    .gradient-btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 24px 40px -24px rgba(124,58,237,0.68);
-    }
-    .gradient-btn:active:not(:disabled) { transform: scale(0.98); }
-
-    .secondary-btn {
-      border-radius: 16px !important;
-      border: 1px solid rgba(196,181,253,0.55) !important;
-      background: rgba(255,255,255,0.84) !important;
-      color: #4338ca !important;
-      box-shadow: none !important;
-      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease !important;
-    }
-    .secondary-btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      border-color: rgba(139,92,246,0.42) !important;
-      background: rgba(255,255,255,0.95) !important;
-    }
-
-    .section-label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #7c3aed;
-    }
-
     .tabs {
-      position: relative;
+      position: sticky;
+      top: 112px;
+      z-index: 20;
       display: flex;
       gap: 6px !important;
-      margin: 0 !important;
+      margin: 0 0 28px !important;
       padding: 8px !important;
       border: 1px solid rgba(255,255,255,0.72) !important;
       border-radius: 999px !important;
@@ -526,7 +484,6 @@
       box-shadow: var(--card-shadow);
       backdrop-filter: blur(18px);
       overflow-x: auto;
-      min-height: 56px;
     }
     .tab-btn {
       position: relative;
@@ -536,10 +493,6 @@
       color: #64748b !important;
       transition: transform 0.18s ease, color 0.18s ease, background 0.18s ease !important;
       white-space: nowrap;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      z-index: 1;
     }
     .tab-btn:hover:not(.active) { transform: translateY(-1px); color: #0f172a !important; }
     .tab-btn.active {
@@ -687,13 +640,6 @@
     .stat .num { background: var(--brand-grad); -webkit-background-clip: text; color: transparent !important; }
     .stat .lbl { color: var(--text-soft) !important; }
 
-    .stat-card {
-      border: 1px solid rgba(255,255,255,0.72) !important;
-      border-radius: 22px;
-      background: rgba(255,255,255,0.86);
-      box-shadow: 0 12px 26px -24px rgba(15,23,42,0.25);
-    }
-
     #mdOutput {
       background: rgba(255,255,255,0.42);
       border: 1px solid rgba(255,255,255,0.66);
@@ -727,199 +673,74 @@
     .study-plan-topic[data-open="true"] .study-plan-chevron { transform: rotate(180deg); }
     .study-plan-panel { border-top: 1px solid rgba(241,245,249,0.96); overflow: hidden; }
     .study-plan-panel-inner { padding: 18px 20px 20px; }
-    .study-plan-intro {
-      margin-bottom: 18px;
-      padding: 18px 20px;
-      border-radius: 24px;
-      background: rgba(255,255,255,0.66);
-      border: 1px solid rgba(255,255,255,0.7);
-    }
-
-    .app-header-grid {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      flex-wrap: wrap;
-    }
-    .brand-wrap {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    .brand-copy {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .brand-copy p {
-      margin: 0;
-      color: var(--text-soft);
-      font-size: 0.86rem;
-    }
-
-    .page-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    .upload-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
-      gap: 24px;
-      align-items: start;
-    }
-
-    .upload-sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .empty-tile {
-      padding: 18px;
-      border-radius: 22px;
-      background: rgba(255,255,255,0.64);
-      border: 1px solid rgba(255,255,255,0.74);
-    }
-
-    .icon-chip {
-      width: 44px;
-      height: 44px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 16px;
-      background: var(--brand-grad-soft);
-      color: #6d28d9;
-    }
 
     @media (max-width: 900px) {
-      .app-header-grid { align-items: stretch; }
-      .upload-grid { grid-template-columns: 1fr; }
       header { margin: 12px 14px 0; }
       .page { padding-top: 22px !important; }
-    }
-
-    @media (max-width: 640px) {
-      .tabs { width: 100%; }
-      .tab-btn { justify-content: center; padding: 11px 14px !important; }
-      header h1 { font-size: 1.08rem !important; }
+      .tabs { top: 98px; }
     }
   </style>
 </head>
 <body>
 
-<header class="app-shell">
-  <div class="app-header-grid">
-    <div class="brand-wrap">
-      <span aria-hidden="true"><i data-lucide="sparkles"></i></span>
-      <div class="brand-copy">
-        <h1>4thWall - AI Tutor</h1>
-        <p>Upload source material, generate a study plan, and keep tutoring grounded in the same document.</p>
-      </div>
-    </div>
-    <nav class="tabs" aria-label="Primary">
-      <div id="tabIndicator"></div>
-      <button class="tab-btn active" data-tab="pdf" aria-label="PDF study plan">
-        <i data-lucide="file-stack"></i><span>Study Plan</span>
-      </button>
-      <button class="tab-btn" data-tab="chat" aria-label="Tutor chat">
-        <i data-lucide="messages-square"></i><span>Tutor Chat</span>
-      </button>
-      <button class="tab-btn" data-tab="mastery" aria-label="Concept mastery">
-        <i data-lucide="bar-chart-3"></i><span>Mastery</span>
-      </button>
-      <button class="tab-btn" data-tab="graph" aria-label="Knowledge graph">
-        <i data-lucide="network"></i><span>Knowledge Graph</span>
-      </button>
-      <button class="tab-btn" data-tab="profile" aria-label="Profile and groups">
-        <i data-lucide="user-round"></i><span>My Profile</span>
-      </button>
-    </nav>
-  </div>
+<header>
+  <span>📚</span>
+  <h1>4thWall — AI Tutor</h1>
 </header>
 
 <div class="page">
-  <div class="page-stack">
 
+  <!-- Tab nav -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="pdf">📄 PDF → Study Plan</button>
+    <button class="tab-btn"        data-tab="chat">💬 Tutor Chat</button>
+    <button class="tab-btn"        data-tab="mastery">📊 Mastery</button>
+    <button class="tab-btn"        data-tab="graph">🧠 Knowledge Graph</button>
+    <button class="tab-btn"        data-tab="profile">👤 My Profile</button>
+  </div>
+
+  <!-- ── PDF tab ── -->
   <div class="tab-panel active" id="tab-pdf">
-    <div class="glass-card card page-section">
-    <div class="upload-grid">
-      <div>
-        <div class="mb-5">
-          <div class="section-label mb-3">Document Workspace</div>
-          <h2 class="mb-2 text-3xl font-semibold tracking-tight text-slate-950">Turn a PDF into a structured study path.</h2>
-          <p class="max-w-2xl text-sm leading-7 text-slate-500">Upload one lecture deck or reading packet, generate a topic-by-topic plan, then jump straight into tutoring with the same document context.</p>
-        </div>
+  <div class="card">
+    <h2>Upload a PDF</h2>
 
-        <div id="dropZone" class="page-section" role="button" tabindex="0" aria-label="Upload PDF">
-          <div class="icon icon-chip mx-auto mb-4"><i data-lucide="upload-cloud"></i></div>
-          <p class="text-base font-medium text-slate-700">Drag and drop your PDF here, or <strong id="browseLink">browse</strong></p>
-          <p style="margin-top:10px; font-size:0.82rem; color:#64748b;">PDF only. Up to 50 MB. Your current extraction and chat flow stays unchanged.</p>
-        </div>
-        <input type="file" id="pdfInput" accept=".pdf" style="display:none" />
-
-        <div id="fileInfo" class="page-section">
-          <span class="file-icon icon-chip !w-10 !h-10 !rounded-xl"><i data-lucide="file-text"></i></span>
-          <span class="file-name" id="fileName"></span>
-          <button class="remove-btn" id="removeFile" title="Remove" aria-label="Remove selected file"><i data-lucide="x"></i></button>
-        </div>
-
-        <button id="processBtn" class="gradient-btn mt-5 inline-flex w-full items-center justify-center gap-2 px-5 py-4 text-sm font-semibold" disabled>
-          <i data-lucide="sparkles"></i>
-          <span>Generate Study Plan</span>
-        </button>
-      </div>
-
-      <aside class="upload-sidebar">
-        <div class="empty-tile">
-          <div class="section-label mb-3">Why It Helps</div>
-          <p class="text-sm font-medium text-slate-800">Get clean topic grouping, subtopics, and study prompts before you start tutoring.</p>
-          <p class="mt-3 text-sm leading-6 text-slate-500">The generated outline feeds the mastery and chat views, so this card becomes the source of truth for the rest of the experience.</p>
-        </div>
-        <div class="empty-tile">
-          <div class="section-label mb-3">Next Step</div>
-          <p class="text-sm font-medium text-slate-800">No PDF selected yet.</p>
-          <p class="mt-3 text-sm leading-6 text-slate-500">Choose a course document to unlock stats, collapsible topic sections, downloads, and grounded chat.</p>
-        </div>
-      </aside>
+    <div id="dropZone">
+      <div class="icon">📄</div>
+      <p>Drag &amp; drop your PDF here, or <strong id="browseLink">browse</strong></p>
+      <p style="margin-top:6px; font-size:0.8rem; color:#aaa;">Max 50 MB</p>
     </div>
+    <input type="file" id="pdfInput" accept=".pdf" style="display:none" />
+
+    <div id="fileInfo">
+      <span class="file-icon">📄</span>
+      <span class="file-name" id="fileName"></span>
+      <button class="remove-btn" id="removeFile" title="Remove">✕</button>
+    </div>
+
+    <button id="processBtn" disabled style="margin-top:20px;">Generate Study Plan</button>
   </div>
 
   <!-- Loading -->
-    <div id="loading" class="page-section">
+  <div id="loading">
     <div class="spinner"></div>
-    <p id="loadingMsg">Processing your PDF...</p>
+    <p id="loadingMsg">Processing your PDF…</p>
   </div>
 
   <!-- Error -->
-  <div id="errorBox" class="page-section"></div>
+  <div id="errorBox"></div>
 
   <!-- Results -->
-  <div class="glass-card card page-section" id="resultsCard" style="display:none">
-    <div class="mb-5 flex items-start justify-between gap-4 flex-wrap">
-      <div>
-        <div class="section-label mb-3">Generated Output</div>
-        <h2 class="mb-2 text-2xl font-semibold tracking-tight text-slate-950">Study plan overview</h2>
-        <p class="text-sm leading-6 text-slate-500">Scan the key metrics, expand by topic, then continue into tutoring or download the markdown.</p>
-      </div>
-      <a id="downloadBtn" class="secondary-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold no-underline" download="study_plan.md">
-        <i data-lucide="download"></i>
-        <span>Download Markdown</span>
-      </a>
-    </div>
+  <div class="card" id="resultsCard" style="display:none">
     <div id="statsBar" style="display:flex">
-      <div class="stat stat-card"><div class="num" id="statPages">-</div><div class="lbl">Pages</div></div>
-      <div class="stat stat-card"><div class="num" id="statTopics">-</div><div class="lbl">Topics</div></div>
-      <div class="stat stat-card"><div class="num" id="statConcepts">-</div><div class="lbl">Subtopics</div></div>
+      <div class="stat"><div class="num" id="statPages">—</div><div class="lbl">Pages</div></div>
+      <div class="stat"><div class="num" id="statTopics">—</div><div class="lbl">Topics</div></div>
+      <div class="stat"><div class="num" id="statConcepts">—</div><div class="lbl">Subtopics</div></div>
     </div>
-    <div id="mdOutput" class="prose prose-slate max-w-none"></div>
+    <a id="downloadBtn" download="study_plan.md">⬇ Download study_plan.md</a>
+    <div id="mdOutput"></div>
     <div id="switchChatHint" style="display:none;margin-top:18px;text-align:center">
-      <button onclick="switchToChat()" class="gradient-btn inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold">
-        <i data-lucide="arrow-right"></i>
-        <span>Chat about this PDF</span>
+      <button onclick="switchToChat()" style="background:#4f46e5;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:0.9rem;font-weight:600;cursor:pointer">
+        💬 Chat about this PDF →
       </button>
     </div>
   </div>
@@ -927,11 +748,11 @@
   <!-- Group Study Plan section (shown when a group is active) -->
   <div id="groupStudyPlanSection" class="card" style="display:none;margin-top:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
-      <h2 style="margin:0">ðŸ“‹ Group Plan: <span id="groupStudyGroupName" style="color:#4f46e5"></span></h2>
+      <h2 style="margin:0">📋 Group Plan: <span id="groupStudyGroupName" style="color:#4f46e5"></span></h2>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button id="generateGroupPlanBtn" onclick="generateGroupStudyPlan()"
           style="padding:6px 14px;background:#4f46e5;color:#fff;border:none;border-radius:7px;font-size:0.83rem;cursor:pointer;font-weight:600">
-          âœ¨ Generate Plan
+          ✨ Generate Plan
         </button>
         <button onclick="deactivateGroup()"
           style="padding:5px 13px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;font-size:0.8rem;cursor:pointer;font-weight:600">
@@ -942,19 +763,19 @@
 
     <!-- Stale-plan warning -->
     <div id="groupPlanStaleBanner" style="display:none;background:#fef9c3;border:1px solid #fde047;border-radius:7px;padding:9px 14px;margin-bottom:12px;font-size:0.84rem;color:#854d0e;align-items:center;gap:8px">
-      <span>âš ï¸</span>
-      <span>New PDFs added since this plan was generated â€” <strong>regenerate</strong> to include them.</span>
+      <span>⚠️</span>
+      <span>New PDFs added since this plan was generated — <strong>regenerate</strong> to include them.</span>
       <button onclick="generateGroupStudyPlan()" style="margin-left:auto;padding:4px 11px;background:#854d0e;color:#fff;border:none;border-radius:5px;font-size:0.78rem;cursor:pointer;font-weight:600">Update Now</button>
     </div>
 
-    <div id="groupPlanLoading" style="display:none;color:#6b7280;font-size:0.85rem;margin:8px 0">â³ Generating combined planâ€¦</div>
+    <div id="groupPlanLoading" style="display:none;color:#6b7280;font-size:0.85rem;margin:8px 0">⏳ Generating combined plan…</div>
 
     <!-- Saved plan content -->
     <div id="groupPlanContent" style="display:none;margin-bottom:14px">
       <div id="groupPlanMd"></div>
       <a id="groupPlanDownload" download="group_study_plan.md"
         style="display:inline-block;padding:6px 14px;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0;border-radius:6px;font-size:0.82rem;font-weight:600;text-decoration:none;margin-top:10px">
-        â¬‡ Download plan
+        ⬇ Download plan
       </a>
     </div>
     <div id="groupPlanEmpty" style="color:#9ca3af;font-size:0.84rem;margin-bottom:10px">
@@ -970,7 +791,7 @@
 
   </div><!-- /tab-pdf -->
 
-  <!-- â”€â”€ Chat tab â”€â”€ -->
+  <!-- ── Chat tab ── -->
   <div class="tab-panel" id="tab-chat">
     <div id="chatLayout">
 
@@ -980,18 +801,18 @@
 
         <!-- Group context banner (shown when a group is active) -->
         <div id="groupBanner" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:0.84rem;color:#15803d;align-items:center;gap:8px">
-          <span>ðŸ“</span>
+          <span>📁</span>
           <span>Group active: <strong id="groupBannerName"></strong></span>
           <span id="groupDocCount" style="font-size:0.75rem;color:#6b7280;margin-left:4px"></span>
-          <button onclick="deactivateGroup()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem" title="Remove group context">âœ•</button>
+          <button onclick="deactivateGroup()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem" title="Remove group context">✕</button>
         </div>
 
         <!-- PDF context banner (shown when a doc is loaded) -->
         <div id="pdfBanner" style="display:none;background:#f0f0ff;border:1px solid #c7c7ff;border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:0.84rem;color:#4338ca;align-items:center;gap:8px">
-          <span>ðŸ“„</span>
+          <span>📄</span>
           <span>Tutoring based on: <strong id="pdfBannerName"></strong></span>
           <span id="smStatus" style="font-size:0.75rem;padding:2px 7px;border-radius:4px;font-weight:600"></span>
-          <button onclick="clearPdfContext()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem" title="Remove PDF context">âœ•</button>
+          <button onclick="clearPdfContext()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem" title="Remove PDF context">✕</button>
         </div>
 
         <!-- Session bar -->
@@ -1010,21 +831,21 @@
         <div class="outcome-row">
             <label for="outcomeSelect">After each reply, I felt:</label>
             <select id="outcomeSelect">
-              <option value="">â€” auto-detect â€”</option>
-              <option value="correct">âœ… I got it (correct)</option>
-              <option value="partial">ðŸŸ¡ Kind of understood (partial)</option>
-              <option value="confused">ðŸ˜• Still confused</option>
-              <option value="incorrect">âŒ I was wrong (incorrect)</option>
+              <option value="">— auto-detect —</option>
+              <option value="correct">✅ I got it (correct)</option>
+              <option value="partial">🟡 Kind of understood (partial)</option>
+              <option value="confused">😕 Still confused</option>
+              <option value="incorrect">❌ I was wrong (incorrect)</option>
             </select>
-            <button id="quizOpenBtn" onclick="openQuiz()" style="margin-left:auto;padding:5px 13px;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0;border-radius:6px;font-size:0.82rem;cursor:pointer;font-weight:600">ðŸ“ Quiz Me</button>
+            <button id="quizOpenBtn" onclick="openQuiz()" style="margin-left:auto;padding:5px 13px;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0;border-radius:6px;font-size:0.82rem;cursor:pointer;font-weight:600">📝 Quiz Me</button>
           </div>
 
           <!-- chat window -->
           <div id="chatWindow">
             <div class="msg" id="welcomeMsg">
-              <div class="avatar">ðŸ¤–</div>
+              <div class="avatar">🤖</div>
               <div class="bubble">
-                <p id="welcomeText">Hi! I'm your adaptive tutor. Ask me anything â€” I'll remember what you know and adapt as we go.</p>
+                <p id="welcomeText">Hi! I'm your adaptive tutor. Ask me anything — I'll remember what you know and adapt as we go.</p>
                 <p style="font-size:0.8rem;color:#aaa;margin-top:4px">Your learner profile is created automatically on your first message.</p>
               </div>
             </div>
@@ -1032,7 +853,7 @@
 
           <!-- input row -->
           <div id="chatInput">
-            <textarea id="msgBox" placeholder="Ask a questionâ€¦" rows="1"></textarea>
+            <textarea id="msgBox" placeholder="Ask a question…" rows="1"></textarea>
             <button id="sendBtn">Send</button>
           </div>
         </div>
@@ -1040,12 +861,12 @@
 
       <!-- memory sidebar -->
       <div id="memorySidebar">
-        <h3>ðŸ§  Memory</h3>
+        <h3>🧠 Memory</h3>
 
         <div class="mem-section">
           <div class="mem-label" style="display:flex;align-items:center;justify-content:space-between">
             <span>Concepts</span>
-            <button onclick="switchToMastery()" style="background:none;border:none;cursor:pointer;color:#4f46e5;font-size:0.7rem;font-weight:700;padding:0;line-height:1">View All â†’</button>
+            <button onclick="switchToMastery()" style="background:none;border:none;cursor:pointer;color:#4f46e5;font-size:0.7rem;font-weight:700;padding:0;line-height:1">View All →</button>
           </div>
           <div id="memConcepts"><span style="color:#bbb;font-size:0.75rem">none yet</span></div>
         </div>
@@ -1066,12 +887,12 @@
     </div><!-- /chatLayout -->
   </div><!-- /tab-chat -->
 
-  <!-- â”€â”€ Knowledge Graph tab â”€â”€ -->
+  <!-- ── Knowledge Graph tab ── -->
   <div class="tab-panel" id="tab-graph">
     <div class="card">
-      <h2>ðŸ§  Knowledge Graph</h2>
+      <h2>🧠 Knowledge Graph</h2>
       <p style="color:#777;font-size:0.87rem;margin-bottom:12px">
-        Your understanding as a live network. Each node is a concept â€” coloured by mastery.
+        Your understanding as a live network. Each node is a concept — coloured by mastery.
         Edges connect concepts explored together. Red borders mark known misconceptions.
         Drag nodes to rearrange, scroll to zoom.
       </p>
@@ -1084,7 +905,7 @@
       </div>
       <div id="graphEmpty" style="display:none;text-align:center;padding:48px 24px;color:#aaa">
         <div style="font-size:2.5rem">&#x1F5FA;</div>
-        <p style="margin-top:8px">Chat about a topic first â€” concepts will appear here as you learn.</p>
+        <p style="margin-top:8px">Chat about a topic first — concepts will appear here as you learn.</p>
       </div>
       <div id="graphContainer" style="width:100%;height:540px;border:1px solid #e0e0e0;border-radius:10px;background:#fafafa;overflow:hidden;position:relative">
         <svg id="graphSvg" style="width:100%;height:100%"></svg>
@@ -1093,32 +914,32 @@
     </div>
   </div><!-- /tab-graph -->
 
-  <!-- â”€â”€ Mastery tab â”€â”€ -->
+  <!-- ── Mastery tab ── -->
   <div class="tab-panel" id="tab-mastery">
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
-        <h2 style="margin:0">ðŸ“Š Concept Mastery</h2>
+        <h2 style="margin:0">📊 Concept Mastery</h2>
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
           <span id="masteryStats" style="font-size:0.83rem;color:#888"></span>
-          <button onclick="openQuiz()" style="padding:6px 14px;background:#4f46e5;color:#fff;border:none;border-radius:7px;font-size:0.83rem;cursor:pointer;font-weight:600">ðŸ“ Quiz Me</button>
+          <button onclick="openQuiz()" style="padding:6px 14px;background:#4f46e5;color:#fff;border:none;border-radius:7px;font-size:0.83rem;cursor:pointer;font-weight:600">📝 Quiz Me</button>
         </div>
       </div>
       <div id="masteryContextLabel" style="display:none;font-size:0.8rem;color:#4338ca;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;padding:5px 10px;margin-bottom:12px"></div>
 
       <div id="masteryEmpty" style="text-align:center;padding:56px 24px;color:#aaa">
-        <div style="font-size:2.5rem">ðŸ“š</div>
+        <div style="font-size:2.5rem">📚</div>
         <p style="margin-top:10px">Upload a PDF or start chatting to see your concept mastery here.</p>
         <p style="margin-top:6px;font-size:0.82rem">Each concept from the study plan starts at 0 % and updates as you chat or take quizzes.</p>
       </div>
 
       <div id="masteryList" style="display:none">
         <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
-          <input id="masterySearch" placeholder="Filter conceptsâ€¦"
+          <input id="masterySearch" placeholder="Filter concepts…"
             style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" />
           <select id="masterySort" style="padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;background:#fff;cursor:pointer">
             <option value="mastery-asc">Lowest first</option>
             <option value="mastery-desc">Highest first</option>
-            <option value="alpha">A â†’ Z</option>
+            <option value="alpha">A → Z</option>
             <option value="attempts-desc">Most practiced</option>
           </select>
         </div>
@@ -1126,25 +947,25 @@
         <div style="display:flex;gap:14px;margin-bottom:12px;font-size:0.76rem;flex-wrap:wrap">
           <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#d1d5db;display:inline-block"></span>Not practiced</span>
           <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#ef4444;display:inline-block"></span>Low (&lt;30%)</span>
-          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b;display:inline-block"></span>Building (30â€“60%)</span>
-          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#22c55e;display:inline-block"></span>Strong (â‰¥60%)</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b;display:inline-block"></span>Building (30–60%)</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#22c55e;display:inline-block"></span>Strong (≥60%)</span>
         </div>
         <div id="masteryRows"></div>
       </div>
     </div>
   </div><!-- /tab-mastery -->
 
-  <!-- â”€â”€ Profile tab â”€â”€ -->
+  <!-- ── Profile tab ── -->
   <div class="tab-panel" id="tab-profile">
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
-        <h2 style="margin:0">ðŸ‘¤ My Profile</h2>
+        <h2 style="margin:0">👤 My Profile</h2>
         <code id="profileUserBadge" style="font-size:0.75rem;color:#9ca3af;background:#f1f5f9;padding:3px 8px;border-radius:5px"></code>
       </div>
 
       <!-- Create group form -->
       <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;align-items:center">
-        <input id="newGroupName" placeholder="New group nameâ€¦"
+        <input id="newGroupName" placeholder="New group name…"
           style="flex:1;min-width:180px;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:0.88rem" />
         <button onclick="createGroup()"
           style="padding:9px 20px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:0.88rem;cursor:pointer;font-weight:600;white-space:nowrap">+ Create Group</button>
@@ -1152,26 +973,24 @@
       <div id="profileCreateStatus" style="font-size:0.82rem;margin-top:-16px;margin-bottom:14px;min-height:16px"></div>
 
       <div id="profileGroupsEmpty" style="text-align:center;padding:48px 24px;color:#aaa">
-        <div style="font-size:2.4rem">ðŸ“</div>
+        <div style="font-size:2.4rem">📁</div>
         <p style="margin-top:10px">No groups yet.<br>Create one above, then upload PDFs into it.</p>
       </div>
-  <div id="profileGroupsList"></div>
+      <div id="profileGroupsList"></div>
     </div>
   </div><!-- /tab-profile -->
-  </div><!-- /.page-stack -->
- </div><!-- /.page -->
 
-<!-- â”€â”€ Quiz Modal â”€â”€ -->
+<!-- ── Quiz Modal ── -->
 <div id="quizModal">
   <div id="quizModalInner">
     <!-- Setup view -->
     <div id="quizSetup">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <span style="font-weight:700;font-size:1.05rem;color:#1f2937">ðŸ“ Quiz Generator</span>
-        <button id="quizCloseBtn" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:1.25rem;line-height:1" title="Close">âœ•</button>
+        <span style="font-weight:700;font-size:1.05rem;color:#1f2937">📝 Quiz Generator</span>
+        <button id="quizCloseBtn" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:1.25rem;line-height:1" title="Close">✕</button>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <input id="quizTopic" placeholder="Topic (optional â€” blank = whole PDF)â€¦"
+        <input id="quizTopic" placeholder="Topic (optional — blank = whole PDF)…"
           style="flex:1;min-width:180px;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.86rem" />
         <select id="quizN" style="padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.86rem;background:#fff;cursor:pointer">
           <option value="3">3 questions</option>
@@ -1180,7 +999,7 @@
           <option value="10">10 questions</option>
         </select>
         <button id="quizGenerateBtn"
-          style="padding:8px 18px;background:#4f46e5;color:#fff;border:none;border-radius:6px;font-size:0.86rem;cursor:pointer;font-weight:600;white-space:nowrap">Generate âœ¨</button>
+          style="padding:8px 18px;background:#4f46e5;color:#fff;border:none;border-radius:6px;font-size:0.86rem;cursor:pointer;font-weight:600;white-space:nowrap">Generate ✨</button>
       </div>
       <div id="quizStatus" style="font-size:0.82rem;margin-top:8px;min-height:18px"></div>
     </div>
@@ -1191,9 +1010,9 @@
     <!-- Submit / reset row -->
     <div id="quizSubmitRow" style="display:none;gap:8px;margin-top:14px">
       <button id="quizSubmitBtn"
-        style="flex:1;padding:10px 16px;background:#059669;color:#fff;border:none;border-radius:7px;font-size:0.88rem;cursor:pointer;font-weight:700">Submit Quiz â†’</button>
+        style="flex:1;padding:10px 16px;background:#059669;color:#fff;border:none;border-radius:7px;font-size:0.88rem;cursor:pointer;font-weight:700">Submit Quiz →</button>
       <button id="quizResetBtn"
-        style="padding:10px 14px;background:#f3f4f6;color:#374151;border:none;border-radius:7px;font-size:0.88rem;cursor:pointer">â†º Reset</button>
+        style="padding:10px 14px;background:#f3f4f6;color:#374151;border:none;border-radius:7px;font-size:0.88rem;cursor:pointer">↺ Reset</button>
     </div>
 
     <!-- Results view (injected by JS) -->
@@ -1206,66 +1025,21 @@
 <!-- D3.js for knowledge graph -->
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script>
-  const motionPromise = import("https://cdn.jsdelivr.net/npm/motion@12.23.24/+esm").catch(() => null);
-  const tabButtons = [...document.querySelectorAll(".tab-btn")];
-  const tabIndicator = document.getElementById("tabIndicator");
-
-  function animateWithMotion(run, fallback) {
-    motionPromise.then(mod => {
-      if (mod) run(mod);
-      else if (fallback) fallback();
+  // ── Tab switching ─────────────────────────────────────────────────────────
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+      if (btn.dataset.tab === "graph")   refreshKnowledgeGraph();
+      if (btn.dataset.tab === "mastery") updateMasteryTab(_currentMasteryAllConcepts, docConceptIds);
+      if (btn.dataset.tab === "profile") loadProfile();
+      if (btn.dataset.tab === "pdf")     _renderGroupStudySection(_activeGroupData);
     });
-  }
-
-  function refreshIcons() {
-    if (window.lucide?.createIcons) {
-      window.lucide.createIcons();
-    }
-  }
-
-  function moveTabIndicator(activeBtn, immediate = false) {
-    if (!tabIndicator || !activeBtn) return;
-    const left = activeBtn.offsetLeft;
-    const width = activeBtn.offsetWidth;
-    if (immediate) {
-      tabIndicator.style.transform = `translateX(${left}px)`;
-      tabIndicator.style.width = `${width}px`;
-      return;
-    }
-    animateWithMotion(
-      ({ animate }) => animate(tabIndicator, {
-        transform: `translateX(${left}px)`,
-        width: `${width}px`,
-      }, { duration: 0.28, easing: [0.22, 1, 0.36, 1] }),
-      () => {
-        tabIndicator.style.transform = `translateX(${left}px)`;
-        tabIndicator.style.width = `${width}px`;
-      },
-    );
-  }
-
-  function setActiveTab(tabName, options = {}) {
-    const targetBtn = document.querySelector(`.tab-btn[data-tab='${tabName}']`);
-    const targetPanel = document.getElementById("tab-" + tabName);
-    if (!targetBtn || !targetPanel) return;
-    tabButtons.forEach(btn => btn.classList.toggle("active", btn === targetBtn));
-    document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.toggle("active", panel === targetPanel));
-    moveTabIndicator(targetBtn, options.immediate === true);
-    if (tabName === "graph") refreshKnowledgeGraph();
-    if (tabName === "mastery") updateMasteryTab(_currentMasteryAllConcepts, docConceptIds);
-    if (tabName === "profile") loadProfile();
-    if (tabName === "pdf") _renderGroupStudySection(_activeGroupData);
-  }
-
-  tabButtons.forEach(btn => btn.addEventListener("click", () => setActiveTab(btn.dataset.tab)));
-  window.addEventListener("resize", () => moveTabIndicator(document.querySelector(".tab-btn.active"), true));
-
-  animateWithMotion(({ animate, stagger }) => {
-    animate(".page", { opacity: [0, 1], transform: ["translateY(18px)", "translateY(0px)"] }, { duration: 0.42, easing: [0.22, 1, 0.36, 1] });
-    animate(".page-section", { opacity: [0, 1], transform: ["translateY(14px)", "translateY(0px)"] }, { delay: stagger(0.05), duration: 0.34, easing: [0.22, 1, 0.36, 1] });
   });
 
-  // PDF tab
+  // ── PDF tab ───────────────────────────────────────────────────────────────
   const dropZone    = document.getElementById("dropZone");
   const pdfInput    = document.getElementById("pdfInput");
   const browseLink  = document.getElementById("browseLink");
@@ -1283,13 +1057,6 @@
   let selectedFile = null;
 
   browseLink.addEventListener("click", () => pdfInput.click());
-  dropZone.addEventListener("click", () => pdfInput.click());
-  dropZone.addEventListener("keydown", e => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      pdfInput.click();
-    }
-  });
   pdfInput.addEventListener("change", () => { if (pdfInput.files[0]) setFile(pdfInput.files[0]); });
   removeFile.addEventListener("click", () => {
     selectedFile = null; pdfInput.value = "";
@@ -1308,7 +1075,6 @@
     selectedFile = f; fileName.textContent = f.name;
     fileInfo.style.display = "flex"; dropZone.style.display = "none";
     processBtn.disabled = false; hideError(); hideResults();
-    animateWithMotion(({ animate }) => animate(fileInfo, { opacity: [0, 1], transform: ["translateY(8px)", "translateY(0px)"] }, { duration: 0.24 }));
   }
   processBtn.addEventListener("click", async () => {
     if (!selectedFile) return;
@@ -1332,159 +1098,69 @@
         document.getElementById("switchChatHint").style.display = "block";
       }
     } catch (err) {
-      showError("Network error - is the server running?\n" + err.message);
+      showError("Network error — is the server running?\n" + err.message);
     } finally { hideLoading(); }
   });
   function showLoading() { loading.style.display = "block"; processBtn.disabled = true; }
   function hideLoading()  { loading.style.display = "none";  processBtn.disabled = false; }
   function showError(msg) { errorBox.textContent = msg; errorBox.style.display = "block"; }
   function hideError()    { errorBox.style.display = "none"; }
-  function renderStudyPlanMarkdown(container, markdown) {
-    const parsed = marked.parse(markdown);
-    const temp = document.createElement("div");
-    temp.innerHTML = parsed;
-    const nodes = [...temp.childNodes];
-    const intro = [];
-    const groups = [];
-    let current = null;
-
-    nodes.forEach(node => {
-      if (node.nodeType === Node.ELEMENT_NODE && node.tagName === "H2") {
-        current = { title: node.textContent.trim(), nodes: [] };
-        groups.push(current);
-        return;
-      }
-      if (current) current.nodes.push(node);
-      else intro.push(node);
-    });
-
-    if (!groups.length) {
-      container.innerHTML = parsed;
-      return;
-    }
-
-    container.innerHTML = "";
-    if (intro.length) {
-      const introWrap = document.createElement("div");
-      introWrap.className = "study-plan-intro";
-      intro.forEach(node => introWrap.appendChild(node.cloneNode(true)));
-      container.appendChild(introWrap);
-    }
-
-    groups.forEach((group, index) => {
-      const topic = document.createElement("section");
-      topic.className = "study-plan-topic";
-      topic.dataset.open = index === 0 ? "true" : "false";
-
-      const trigger = document.createElement("button");
-      trigger.type = "button";
-      trigger.className = "study-plan-trigger";
-      trigger.setAttribute("aria-expanded", index === 0 ? "true" : "false");
-      trigger.innerHTML = `
-        <div>
-          <div class="study-plan-eyebrow">Topic ${index + 1}</div>
-          <div class="study-plan-title">${group.title}</div>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="study-plan-pill">${group.nodes.filter(node => node.nodeType === Node.ELEMENT_NODE && node.tagName === "H4").length || "Key"} items</span>
-          <span class="study-plan-chevron">⌄</span>
-        </div>`;
-
-      const panel = document.createElement("div");
-      panel.className = "study-plan-panel";
-      panel.style.display = index === 0 ? "block" : "none";
-      panel.style.opacity = index === 0 ? "1" : "0";
-      panel.innerHTML = '<div class="study-plan-panel-inner"></div>';
-      const inner = panel.firstElementChild;
-      group.nodes.forEach(node => inner.appendChild(node.cloneNode(true)));
-
-      trigger.addEventListener("click", () => toggleStudyPanel(topic, panel, trigger));
-      topic.appendChild(trigger);
-      topic.appendChild(panel);
-      container.appendChild(topic);
-    });
-  }
-
-  function toggleStudyPanel(topic, panel, trigger, forceOpen = null) {
-    const shouldOpen = forceOpen ?? topic.dataset.open !== "true";
-    topic.dataset.open = shouldOpen ? "true" : "false";
-    trigger.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
-    if (shouldOpen) panel.style.display = "block";
-    const startHeight = shouldOpen ? 0 : panel.scrollHeight;
-    const endHeight = shouldOpen ? panel.scrollHeight : 0;
-    animateWithMotion(
-      ({ animate }) => {
-        animate(panel, { height: [`${startHeight}px`, `${endHeight}px`], opacity: shouldOpen ? [0, 1] : [1, 0] }, {
-          duration: 0.26,
-          easing: [0.22, 1, 0.36, 1],
-          onComplete: () => {
-            panel.style.height = "";
-            panel.style.opacity = shouldOpen ? "1" : "0";
-            panel.style.display = shouldOpen ? "block" : "none";
-          },
-        });
-      },
-      () => {
-        panel.style.display = shouldOpen ? "block" : "none";
-        panel.style.opacity = shouldOpen ? "1" : "0";
-      },
-    );
-  }
-
   function showResults(data) {
     document.getElementById("statPages").textContent    = data.pages_processed;
     document.getElementById("statTopics").textContent   = data.topics_count;
     document.getElementById("statConcepts").textContent = data.subtopics_count;
     statsBar.style.display = "flex";
-    renderStudyPlanMarkdown(mdOutput, data.markdown);
+    mdOutput.innerHTML = marked.parse(data.markdown);
     mdOutput.style.display = "block";
     const blob = new Blob([data.markdown], { type: "text/markdown" });
     downloadBtn.href = URL.createObjectURL(blob);
     downloadBtn.style.display = "inline-block";
     resultsCard.style.display = "block";
     resultsCard.scrollIntoView({ behavior: "smooth", block: "start" });
-    refreshIcons();
   }
-  function hideResults() {
-    resultsCard.style.display = "none";
-    mdOutput.innerHTML = "";
-  }
+  function hideResults() { resultsCard.style.display = "none"; }
 
-  // â”€â”€ PDF â†’ Chat banner helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── PDF → Chat banner helpers ─────────────────────────────────────────────
   function showPdfBanner(name, smUploaded) {
     const banner = document.getElementById("pdfBanner");
     document.getElementById("pdfBannerName").textContent = name;
     const statusEl = document.getElementById("smStatus");
     if (smUploaded) {
-      statusEl.textContent = "ðŸ” Supermemory indexed";
+      statusEl.textContent = "🔍 Supermemory indexed";
       statusEl.style.cssText = "background:#e8f5e9;color:#2e7d32;padding:2px 7px;border-radius:4px;font-weight:600";
     } else {
-      statusEl.textContent = "âš ï¸ Local search only";
+      statusEl.textContent = "⚠️ Local search only";
       statusEl.style.cssText = "background:#fff8e1;color:#7a5a00;padding:2px 7px;border-radius:4px;font-weight:600";
     }
     banner.style.display = "flex";
     document.getElementById("welcomeText").textContent =
-      `Hi! I've loaded "${name}". Ask me anything about it â€” I'll adapt to what you know.`;
+      `Hi! I've loaded "${name}". Ask me anything about it — I'll adapt to what you know.`;
   }
 
   function clearPdfContext() {
     currentDocId = null; currentDocName = null;
     document.getElementById("pdfBanner").style.display = "none";
     document.getElementById("welcomeText").textContent =
-      "Hi! I'm your adaptive tutor. Ask me anything â€” I'll remember what you know and adapt as we go.";
+      "Hi! I'm your adaptive tutor. Ask me anything — I'll remember what you know and adapt as we go.";
   }
 
   function switchToChat() {
-    setActiveTab("chat");
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    document.querySelector(".tab-btn[data-tab='chat']").classList.add("active");
+    document.getElementById("tab-chat").classList.add("active");
     msgBox.focus();
   }
 
   function switchToMastery() {
-    setActiveTab("mastery");
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    document.querySelector(".tab-btn[data-tab='mastery']").classList.add("active");
+    document.getElementById("tab-mastery").classList.add("active");
     updateMasteryTab(_currentMasteryAllConcepts, docConceptIds);
   }
 
-  // â”€â”€ Chat tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Chat tab ──────────────────────────────────────────────────────────────
   const chatWindow     = document.getElementById("chatWindow");
   const msgBox         = document.getElementById("msgBox");
   const sendBtn        = document.getElementById("sendBtn");
@@ -1505,7 +1181,7 @@
   let activeGroupId   = null;   // set when user activates a group from profile
   let activeGroupName = null;
 
-  // â”€â”€ Session controls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Session controls ──────────────────────────────────────────────────────
   const createSessionBtn = document.getElementById("createSessionBtn");
   const joinSessionBtn   = document.getElementById("joinSessionBtn");
   const joinCodeInput    = document.getElementById("joinCodeInput");
@@ -1514,17 +1190,17 @@
     sessionCode = code;
     learnerId   = id;
     const badge = document.getElementById("sessionBadge");
-    badge.textContent = "ðŸ‘¥ Session: " + code;
+    badge.textContent = "👥 Session: " + code;
     badge.style.display = "inline-block";
     document.getElementById("sessionInfo").textContent =
-      "Share this code with your group â€” you\'ll all build the same knowledge graph.";
-    createSessionBtn.textContent = "âœ“ New Session";
-    learnerIdEl.textContent = "Session: " + code + " Â· ID: " + id.slice(0, 8) + "â€¦";
+      "Share this code with your group — you\'ll all build the same knowledge graph.";
+    createSessionBtn.textContent = "✓ New Session";
+    learnerIdEl.textContent = "Session: " + code + " · ID: " + id.slice(0, 8) + "…";
     // Announce in chat
     const welcome = document.getElementById("welcomeMsg");
     if (welcome) welcome.remove();
     appendBubble("system",
-      "ðŸ‘¥ Session " + code + " started. Share this code with your group â€” " +
+      "👥 Session " + code + " started. Share this code with your group — " +
       "everyone will contribute to the same learner profile and knowledge graph.");
   }
 
@@ -1584,7 +1260,7 @@
     div.className = "msg" + (role === "user" ? " user" : role === "system" ? " system-msg" : "");
     const avatar = document.createElement("div");
     avatar.className = "avatar";
-    avatar.textContent = role === "user" ? "ðŸ§‘" : role === "system" ? "â„¹ï¸" : "ðŸ¤–";
+    avatar.textContent = role === "user" ? "🧑" : role === "system" ? "ℹ️" : "🤖";
     const bubble = document.createElement("div");
     bubble.className = "bubble";
     // Render markdown in tutor messages
@@ -1593,7 +1269,7 @@
     } else {
       bubble.textContent = text;
     }
-    // Optional badge (e.g. "ðŸ” Supermemory grounded")
+    // Optional badge (e.g. "🔍 Supermemory grounded")
     if (badge) {
       const badgeEl = document.createElement("span");
       badgeEl.className = "sm-badge";
@@ -1611,7 +1287,7 @@
     const div = document.createElement("div");
     div.className = "msg msg-typing";
     div.id = "typingIndicator";
-    div.innerHTML = '<div class="avatar">ðŸ¤–</div><div class="bubble">Thinkingâ€¦</div>';
+    div.innerHTML = '<div class="avatar">🤖</div><div class="bubble">Thinking…</div>';
     chatWindow.appendChild(div);
     chatWindow.scrollTop = chatWindow.scrollHeight;
   }
@@ -1623,7 +1299,7 @@
   function updateMemory(preview) {
     if (!preview) return;
 
-    // Build a lookup from concept_id â†’ data for the full list
+    // Build a lookup from concept_id → data for the full list
     const allConceptsMap = {};
     for (const c of (preview.all_concepts || [])) allConceptsMap[c.concept_id] = c;
 
@@ -1654,7 +1330,7 @@
     const misc = preview.misconceptions || [];
     if (misc.length) {
       memMisc.innerHTML = misc.map(m =>
-        `<div style="margin-bottom:3px;font-size:0.76rem">âš  ${m.misconception_id.replace(/_/g,' ')} <span style="color:#aaa">(Ã—${m.count})</span></div>`
+        `<div style="margin-bottom:3px;font-size:0.76rem">⚠ ${m.misconception_id.replace(/_/g,' ')} <span style="color:#aaa">(×${m.count})</span></div>`
       ).join("");
     } else {
       memMisc.innerHTML = '<span style="color:#bbb;font-size:0.75rem">none yet</span>';
@@ -1715,40 +1391,40 @@
       removeTyping();
 
       if (!res.ok || data.error) {
-        appendBubble("assistant", "âš ï¸ Error: " + (data.error || res.statusText));
+        appendBubble("assistant", "⚠️ Error: " + (data.error || res.statusText));
         return;
       }
 
       // Warn if PDF context was lost (e.g. server restarted)
       if (currentDocId && data.doc_found === false) {
         appendBubble("system",
-          "âš ï¸ The server no longer has this PDF in memory (it may have restarted). " +
+          "⚠️ The server no longer has this PDF in memory (it may have restarted). " +
           "Please re-upload the PDF to resume grounded tutoring.");
         clearPdfContext();
       }
 
-      // Persist IDs â€” never overwrite a session-locked learner ID
+      // Persist IDs — never overwrite a session-locked learner ID
       if (!sessionCode) {
         learnerId = data.learner_id;
         sessionId = data.session_id;
-        learnerIdEl.textContent = "ID: " + learnerId.slice(0, 18) + "â€¦";
+        learnerIdEl.textContent = "ID: " + learnerId.slice(0, 18) + "…";
       }
       // (if in a session, learnerId + display were already set by _applySession)
 
       // Show semantic-grounding badge on the bubble if Supermemory was used
-      appendBubble("assistant", data.assistant, data.sm_grounded ? "ðŸ” Supermemory grounded" : null);
+      appendBubble("assistant", data.assistant, data.sm_grounded ? "🔍 Supermemory grounded" : null);
       updateMemory(data.memory_preview);
 
     } catch (err) {
       removeTyping();
-      appendBubble("assistant", "âš ï¸ Network error: " + err.message);
+      appendBubble("assistant", "⚠️ Network error: " + err.message);
     } finally {
       sendBtn.disabled = false;
       msgBox.focus();
     }
   }
 
-  // â”€â”€ Knowledge Graph â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Knowledge Graph ──────────────────────────────────────────────────
 
   let _graphSimulation = null;
 
@@ -1846,8 +1522,8 @@
           `<strong>${d.id.replace(/_/g," ")}</strong><br>` +
           `Mastery: <b>${(d.mastery*100).toFixed(0)}%</b><br>` +
           `Attempts: ${d.attempts || 0}<br>` +
-          `Last outcome: ${d.last_outcome || "â€”"}` +
-          (d.has_misconception ? "<br><span style='color:#fca5a5'>âš ï¸ Misconception noted</span>" : "");
+          `Last outcome: ${d.last_outcome || "—"}` +
+          (d.has_misconception ? "<br><span style='color:#fca5a5'>⚠️ Misconception noted</span>" : "");
       })
       .on("mousemove", ev => {
         const rect = containerEl.getBoundingClientRect();
@@ -1893,7 +1569,7 @@
     });
   }
 
-  // â”€â”€ Quiz (modal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Quiz (modal) ─────────────────────────────────────────────────────────────
 
   let _quizQuestions = [];
   let _quizAllowedConcepts = [];  // concept IDs whitelisted from the active PDF/group
@@ -1936,8 +1612,8 @@
     document.getElementById("quizResults").style.display   = "none";
     document.getElementById("quizResults").innerHTML       = "";
     document.getElementById("quizGenerateBtn").disabled    = false;
-    document.getElementById("quizGenerateBtn").textContent = "Generate âœ¨";
-    // Don't clear topic â€” user may have prefilled it from mastery tab
+    document.getElementById("quizGenerateBtn").textContent = "Generate ✨";
+    // Don't clear topic — user may have prefilled it from mastery tab
   }
 
   async function generateQuiz() {
@@ -1947,13 +1623,13 @@
     const status = document.getElementById("quizStatus");
 
     if (!currentDocId && !activeGroupId && !topic) {
-      status.textContent = "âš ï¸ Upload a PDF (or activate a group), or type a topic to quiz on.";
+      status.textContent = "⚠️ Upload a PDF (or activate a group), or type a topic to quiz on.";
       status.style.color = "#ef4444";
       return;
     }
 
     btn.disabled    = true;
-    btn.textContent = "Generatingâ€¦";
+    btn.textContent = "Generating…";
     status.textContent = "";
 
     try {
@@ -1969,17 +1645,17 @@
       });
       const data = await res.json();
       if (!res.ok || data.error) {
-        status.textContent = "âš ï¸ " + (data.error || "Failed to generate quiz.");
+        status.textContent = "⚠️ " + (data.error || "Failed to generate quiz.");
         status.style.color = "#ef4444";
-        btn.disabled = false; btn.textContent = "Generate âœ¨";
+        btn.disabled = false; btn.textContent = "Generate ✨";
         return;
       }
       _quizQuestions = data.questions || [];
       _quizAllowedConcepts = data.allowed_concept_ids || [];
       if (!_quizQuestions.length) {
-        status.textContent = "âš ï¸ No questions returned. Try a different topic.";
+        status.textContent = "⚠️ No questions returned. Try a different topic.";
         status.style.color = "#ef4444";
-        btn.disabled = false; btn.textContent = "Generate âœ¨";
+        btn.disabled = false; btn.textContent = "Generate ✨";
         return;
       }
       _renderQuizQuestions(_quizQuestions);
@@ -1987,9 +1663,9 @@
       document.getElementById("quizQuestions").style.display = "block";
       document.getElementById("quizSubmitRow").style.display = "flex";
     } catch (e) {
-      status.textContent = "âš ï¸ Error: " + e.message;
+      status.textContent = "⚠️ Error: " + e.message;
       status.style.color = "#ef4444";
-      btn.disabled = false; btn.textContent = "Generate âœ¨";
+      btn.disabled = false; btn.textContent = "Generate ✨";
     }
   }
 
@@ -2016,7 +1692,7 @@
     if (!_quizQuestions.length) return;
     const submitBtn = document.getElementById("quizSubmitBtn");
 
-    // Collect answers â€” guard against unanswered questions
+    // Collect answers — guard against unanswered questions
     const answers = [];
     for (let qi = 0; qi < _quizQuestions.length; qi++) {
       const sel = document.querySelector(`input[name="quiz-q-${qi}"]:checked`);
@@ -2037,7 +1713,7 @@
     if (!learnerId) learnerId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
 
     submitBtn.disabled    = true;
-    submitBtn.textContent = "Submittingâ€¦";
+    submitBtn.textContent = "Submitting…";
 
     try {
       const res  = await fetch("/api/quiz/submit", {
@@ -2057,8 +1733,8 @@
         fb.style.background = r.correct ? "#d1fae5" : "#fee2e2";
         fb.style.color      = r.correct ? "#065f46" : "#991b1b";
         fb.innerHTML = (r.correct
-          ? "âœ… Correct!"
-          : `âŒ Incorrect â€” correct answer: <strong>${String.fromCharCode(65 + r.correct_index)}. ${_esc((r.options || [])[r.correct_index] || "")}</strong>`
+          ? "✅ Correct!"
+          : `❌ Incorrect — correct answer: <strong>${String.fromCharCode(65 + r.correct_index)}. ${_esc((r.options || [])[r.correct_index] || "")}</strong>`
         ) + (r.explanation ? `<br><span style="opacity:0.8">${_esc(r.explanation)}</span>` : "");
 
         // Colour the option labels
@@ -2082,26 +1758,26 @@
       // If no learner ID was set before, persist it
       if (!learnerId) learnerId = data.learner_id;
       learnerIdEl.textContent = sessionCode
-        ? "Session: " + sessionCode + " Â· ID: " + learnerId.slice(0, 8) + "â€¦"
-        : "ID: " + (learnerId || "").slice(0, 18) + "â€¦";
+        ? "Session: " + sessionCode + " · ID: " + learnerId.slice(0, 8) + "…"
+        : "ID: " + (learnerId || "").slice(0, 18) + "…";
 
     } catch (e) {
       alert("Error submitting quiz: " + e.message);
     } finally {
       submitBtn.disabled    = false;
-      submitBtn.textContent = "Submit Quiz â†’";
+      submitBtn.textContent = "Submit Quiz →";
     }
   }
 
   function _renderQuizResults(data) {
     const pct   = data.score_pct;
-    const emoji = pct >= 80 ? "ðŸŽ‰" : pct >= 60 ? "ðŸ‘" : pct >= 40 ? "ðŸ¤”" : "ðŸ˜“";
+    const emoji = pct >= 80 ? "🎉" : pct >= 60 ? "👍" : pct >= 40 ? "🤔" : "😓";
     const clr   = pct >= 80 ? "#065f46" : pct >= 60 ? "#1e40af" : pct >= 40 ? "#92400e" : "#991b1b";
     const bg    = pct >= 80 ? "#d1fae5" : pct >= 60 ? "#dbeafe" : pct >= 40 ? "#fef3c7" : "#fee2e2";
 
     const deltasHtml = Object.entries(data.mastery_deltas || {}).map(([cid, d]) => {
       const diff  = d.after - d.before;
-      const arrow = diff > 0 ? "â†‘" : diff < 0 ? "â†“" : "â†’";
+      const arrow = diff > 0 ? "↑" : diff < 0 ? "↓" : "→";
       const dclr  = diff > 0 ? "#059669" : diff < 0 ? "#dc2626" : "#6b7280";
       const ppts  = Math.round(Math.abs(diff) * 100);
       return `<span style="display:inline-block;margin:2px 4px;font-size:0.75rem;background:#f3f4f6;padding:2px 8px;border-radius:4px;color:#374151">
@@ -2118,7 +1794,7 @@
       ${deltasHtml ? `<div style="margin:8px 0 12px"><div style="font-size:0.75rem;font-weight:700;color:#6b7280;margin-bottom:5px;letter-spacing:0.04em">MASTERY CHANGES</div>${deltasHtml}</div>` : ""}
       <div style="display:flex;gap:8px;margin-top:10px">
         <button onclick="resetQuiz()"
-          style="flex:1;padding:8px;background:#4f46e5;color:#fff;border:none;border-radius:6px;font-size:0.85rem;cursor:pointer;font-weight:600">ðŸ”„ New Quiz</button>
+          style="flex:1;padding:8px;background:#4f46e5;color:#fff;border:none;border-radius:6px;font-size:0.85rem;cursor:pointer;font-weight:600">🔄 New Quiz</button>
         <button onclick="closeQuiz()"
           style="flex:1;padding:8px;background:#e5e7eb;color:#374151;border:none;border-radius:6px;font-size:0.85rem;cursor:pointer">Close</button>
       </div>
@@ -2131,7 +1807,7 @@
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  // â”€â”€ Mastery tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Mastery tab ────────────────────────────────────────────────────────────
 
   function updateMasteryTab(allConcepts, docCids) {
     _currentMasteryAllConcepts = allConcepts || [];
@@ -2140,10 +1816,10 @@
     const ctxEl = document.getElementById("masteryContextLabel");
     if (ctxEl) {
       if (activeGroupId && activeGroupName) {
-        ctxEl.textContent = `ðŸ“ Showing mastery for group: ${activeGroupName}`;
+        ctxEl.textContent = `📁 Showing mastery for group: ${activeGroupName}`;
         ctxEl.style.display = "block";
       } else if (currentDocName) {
-        ctxEl.textContent = `ðŸ“„ Showing mastery for: ${currentDocName}`;
+        ctxEl.textContent = `📄 Showing mastery for: ${currentDocName}`;
         ctxEl.style.display = "block";
       } else {
         ctxEl.style.display = "none";
@@ -2211,7 +1887,7 @@
           <span style="font-size:0.81rem;font-weight:700;color:${clr};width:34px;text-align:right;flex-shrink:0">${pct}%</span>
           <span style="font-size:0.7rem;color:#9ca3af;min-width:76px;flex-shrink:0">${att}</span>
           <button onclick="openQuiz(this.getAttribute('data-topic'))" data-topic="${_esc(label)}" title="Quiz on this concept"
-            style="padding:3px 9px;background:#e0e7ff;color:#4338ca;border:none;border-radius:4px;font-size:0.73rem;cursor:pointer;flex-shrink:0;font-weight:600">Quiz â–¶</button>
+            style="padding:3px 9px;background:#e0e7ff;color:#4338ca;border:none;border-radius:4px;font-size:0.73rem;cursor:pointer;flex-shrink:0;font-weight:600">Quiz ▶</button>
         </div>`;
     }).join("");
   }
@@ -2219,7 +1895,7 @@
   document.getElementById("masterySearch")?.addEventListener("input",  _renderMasteryRows);
   document.getElementById("masterySort")  ?.addEventListener("change", _renderMasteryRows);
 
-  // â”€â”€ Group Study Plan helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Group Study Plan helpers ────────────────────────────────────────────────────
 
   async function _renderGroupStudySection(groupData) {
     const section = document.getElementById("groupStudyPlanSection");
@@ -2232,11 +1908,11 @@
     const docList = document.getElementById("groupStudyDocList");
     const docs = groupData.docs || [];
     docList.innerHTML = !docs.length
-      ? "<p style='color:#9ca3af;font-size:0.84rem'>No PDFs yet â€” upload from ðŸ‘¤ Profile.</p>"
+      ? "<p style='color:#9ca3af;font-size:0.84rem'>No PDFs yet — upload from 👤 Profile.</p>"
       : docs.map(d => `
           <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:${d.loaded ? '#f0fdf4' : '#f9fafb'};border:1px solid ${d.loaded ? '#bbf7d0' : '#e5e7eb'};border-radius:7px;margin-bottom:6px;flex-wrap:wrap">
             <span style="flex:1;min-width:120px;font-size:0.84rem;color:#374151;font-weight:500">${_esc(d.filename)}</span>
-            <span style="font-size:0.75rem;color:${d.loaded ? '#059669' : '#9ca3af'}">${d.loaded ? 'âœ… Loaded' : 'â³ Needs re-upload'}</span>
+            <span style="font-size:0.75rem;color:${d.loaded ? '#059669' : '#9ca3af'}">${d.loaded ? '✅ Loaded' : '⏳ Needs re-upload'}</span>
             <span style="font-size:0.75rem;color:#9ca3af">${d.pages || 0} pg</span>
           </div>`).join("");
 
@@ -2253,8 +1929,8 @@
       if (data.has_plan) {
         content.style.display = "block";
         empty.style.display   = "none";
-        genBtn.textContent    = "ðŸ”„ Regenerate Plan";
-        renderStudyPlanMarkdown(document.getElementById("groupPlanMd"), data.plan);
+        genBtn.textContent    = "🔄 Regenerate Plan";
+        document.getElementById("groupPlanMd").innerHTML = marked(data.plan);
         const blob = new Blob([data.plan], {type: "text/markdown"});
         const dl   = document.getElementById("groupPlanDownload");
         dl.href     = URL.createObjectURL(blob);
@@ -2264,7 +1940,7 @@
         content.style.display = "none";
         stale.style.display   = "none";
         empty.style.display   = "block";
-        genBtn.textContent    = "âœ¨ Generate Plan";
+        genBtn.textContent    = "✨ Generate Plan";
       }
     } catch(e) {
       console.warn("Could not load group plan:", e);
@@ -2280,7 +1956,7 @@
     const empty   = document.getElementById("groupPlanEmpty");
     const stale   = document.getElementById("groupPlanStaleBanner");
     btn.disabled = true;
-    btn.textContent = "Generatingâ€¦";
+    btn.textContent = "Generating…";
     loading.style.display = "block";
     content.style.display = "none";
     empty.style.display   = "none";
@@ -2290,36 +1966,36 @@
       const data = await res.json();
       loading.style.display = "none";
       if (data.error) {
-        empty.textContent    = "âš ï¸ " + data.error;
+        empty.textContent    = "⚠️ " + data.error;
         empty.style.display  = "block";
-        btn.textContent = "âœ¨ Generate Plan";
+        btn.textContent = "✨ Generate Plan";
         return;
       }
-      renderStudyPlanMarkdown(document.getElementById("groupPlanMd"), data.plan);
+      document.getElementById("groupPlanMd").innerHTML = marked(data.plan);
       const blob = new Blob([data.plan], {type: "text/markdown"});
       const dl   = document.getElementById("groupPlanDownload");
       dl.href     = URL.createObjectURL(blob);
       dl.download = (activeGroupName || "group").replace(/[^a-z0-9]/gi, "_") + "_study_plan.md";
       content.style.display = "block";
       empty.style.display   = "none";
-      btn.textContent = "ðŸ”„ Regenerate Plan";
+      btn.textContent = "🔄 Regenerate Plan";
     } catch(e) {
       loading.style.display = "none";
-      empty.textContent    = "âš ï¸ Error: " + e.message;
+      empty.textContent    = "⚠️ Error: " + e.message;
       empty.style.display  = "block";
-      btn.textContent = "âœ¨ Generate Plan";
+      btn.textContent = "✨ Generate Plan";
     } finally {
       btn.disabled = false;
     }
   }
 
-  // â”€â”€ Profile / Groups â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Profile / Groups ─────────────────────────────────────────────────────
 
   async function loadProfile() {
     const empty    = document.getElementById("profileGroupsEmpty");
     const list     = document.getElementById("profileGroupsList");
     const badge    = document.getElementById("profileUserBadge");
-    list.innerHTML = "<p style='color:#9ca3af;font-size:0.85rem'>Loadingâ€¦</p>";
+    list.innerHTML = "<p style='color:#9ca3af;font-size:0.85rem'>Loading…</p>";
     empty.style.display = "none";
     try {
       const res  = await fetch("/api/groups");
@@ -2375,30 +2051,30 @@
       const isActive = g.group_id === activeGroupId;
       const docChips = (g.docs || []).map(d =>
         `<span class="group-doc-chip ${d.loaded ? 'loaded' : ''}" title="${_esc(d.filename)}">
-          ${d.loaded ? 'âœ…' : 'â³'} ${_esc(d.filename.length > 22 ? d.filename.slice(0,20)+'...' : d.filename)}
+          ${d.loaded ? '✅' : '⏳'} ${_esc(d.filename.length > 22 ? d.filename.slice(0,20)+'...' : d.filename)}
         </span>`
       ).join("");
       const docLimitReached = g.doc_count >= 10;
       return `
         <div class="group-card ${isActive ? 'active-group' : ''}" id="gcard-${g.group_id}">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-            <h3>ðŸ“ ${_esc(g.name)}
+            <h3>📁 ${_esc(g.name)}
               <span style="font-size:0.72rem;font-weight:400;color:#6b7280">${g.doc_count}/10 PDFs</span>
             </h3>
             <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
               <button class="group-activate-btn ${isActive ? 'deactivate' : ''}"
                 onclick="activateGroup('${g.group_id}','${_esc(g.name)}',${ isActive })">
-                ${isActive ? 'âŒ Deactivate' : 'â–¶ Use in Chat'}
+                ${isActive ? '❌ Deactivate' : '▶ Use in Chat'}
               </button>
               <label class="group-upload-btn ${docLimitReached ? 'disabled' : ''}">
-                ${docLimitReached ? 'ðŸš« Max 10' : 'â¬† Upload PDF'}
+                ${docLimitReached ? '🚫 Max 10' : '⬆ Upload PDF'}
                 <input type="file" accept=".pdf" style="display:none"
                   onchange="uploadToGroup('${g.group_id}', this)" ${docLimitReached ? 'disabled' : ''} />
               </label>
             </div>
           </div>
           <div id="gcard-docs-${g.group_id}" style="margin-top:6px;flex-wrap:wrap;display:flex">
-            ${docChips || '<span style="font-size:0.78rem;color:#9ca3af">No PDFs yet â€” upload one above.</span>'}
+            ${docChips || '<span style="font-size:0.78rem;color:#9ca3af">No PDFs yet — upload one above.</span>'}
           </div>
           <div id="gcard-status-${g.group_id}" style="font-size:0.78rem;margin-top:5px;min-height:14px"></div>
         </div>`;
@@ -2410,7 +2086,7 @@
     const status = document.getElementById("profileCreateStatus");
     const name   = input.value.trim();
     if (!name) { input.focus(); return; }
-    status.textContent = "Creatingâ€¦";
+    status.textContent = "Creating…";
     status.style.color = "#6b7280";
     try {
       const res  = await fetch("/api/groups", {
@@ -2419,14 +2095,14 @@
         body:    JSON.stringify({name}),
       });
       const data = await res.json();
-      if (!res.ok) { status.textContent = "âš ï¸ " + (data.error||"Error"); status.style.color="#ef4444"; return; }
+      if (!res.ok) { status.textContent = "⚠️ " + (data.error||"Error"); status.style.color="#ef4444"; return; }
       input.value = "";
-      status.textContent = "âœ… Group \u201c" + name + "\u201d created!";
+      status.textContent = "✅ Group \u201c" + name + "\u201d created!";
       status.style.color = "#059669";
       setTimeout(() => { status.textContent = ""; }, 3000);
       loadProfile();
     } catch(e) {
-      status.textContent = "âš ï¸ " + e.message;
+      status.textContent = "⚠️ " + e.message;
       status.style.color = "#ef4444";
     }
   }
@@ -2469,7 +2145,7 @@
     const file = inputEl.files[0];
     if (!file) return;
     const status = document.getElementById("gcard-status-" + gid);
-    if (status) { status.textContent = "â³ Uploading " + file.name + "â€¦"; status.style.color="#6b7280"; }
+    if (status) { status.textContent = "⏳ Uploading " + file.name + "…"; status.style.color="#6b7280"; }
     const fd = new FormData();
     fd.append("pdf", file);
     inputEl.value = "";
@@ -2477,10 +2153,10 @@
       const res  = await fetch("/api/groups/" + gid + "/upload", { method:"POST", body: fd });
       const data = await res.json();
       if (!res.ok) {
-        if (status) { status.textContent = "âš ï¸ " + (data.error||"Upload failed"); status.style.color="#ef4444"; }
+        if (status) { status.textContent = "⚠️ " + (data.error||"Upload failed"); status.style.color="#ef4444"; }
         return;
       }
-      if (status) { status.textContent = "âœ… " + file.name + " processed ("+data.pages_processed+" pages)"; status.style.color="#059669"; }
+      if (status) { status.textContent = "✅ " + file.name + " processed ("+data.pages_processed+" pages)"; status.style.color="#059669"; }
       // If this group is active, update mastery concepts too
       if (gid === activeGroupId && data.concept_ids?.length) {
         docConceptIds = [...new Set([...docConceptIds, ...data.concept_ids])];
@@ -2488,14 +2164,11 @@
       }
       loadProfile();
     } catch(e) {
-      if (status) { status.textContent = "âš ï¸ " + e.message; status.style.color="#ef4444"; }
+      if (status) { status.textContent = "⚠️ " + e.message; status.style.color="#ef4444"; }
     }
   }
 
-  refreshIcons();
-  moveTabIndicator(document.querySelector(".tab-btn.active"), true);
-
-  // â”€â”€ Init (cookie-based user identity) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Init (cookie-based user identity) ───────────────────────────────────
   (async function initApp() {
     try {
       const res  = await fetch("/api/me");
@@ -2505,7 +2178,7 @@
         // stays consistent without the user needing to manage an ID.
         if (!learnerId) {
           learnerId = data.user_id;
-          learnerIdEl.textContent = "ID: " + learnerId.slice(0, 18) + "â€¦";
+          learnerIdEl.textContent = "ID: " + learnerId.slice(0, 18) + "…";
         }
         const badge = document.getElementById("profileUserBadge");
         if (badge) badge.textContent = "ID: " + learnerId;
@@ -2518,7 +2191,3 @@
 </script>
 </body>
 </html>
-
-
-
-
