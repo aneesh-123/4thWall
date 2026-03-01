@@ -230,24 +230,13 @@
     #mdOutput em { color: #666; font-size: 0.88rem; }
     #mdOutput hr { border: none; border-top: 1px solid #eee; margin: 20px 0; }
 
-    /* â”€â”€ Tabs â”€â”€ */
-    .tabs {
-      display: flex; gap: 0;
-      border-bottom: 2px solid #e0e0e0;
-      margin-bottom: 28px;
-    }
-    .tab-btn {
-      background: none; border: none; cursor: pointer;
-      padding: 10px 22px; font-size: 0.92rem; font-weight: 600;
-      color: #888; border-bottom: 2px solid transparent;
-      margin-bottom: -2px; transition: color 0.15s, border-color 0.15s;
-    }
+    /* Tabs */
     .tab-btn.active { color: #4f46e5; border-bottom-color: #4f46e5; }
     .tab-btn:hover:not(.active) { color: #333; }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
-    /* â”€â”€ Chat â”€â”€ */
+    /*  Chat  */
     #chatWindow {
       height: 420px; overflow-y: auto;
       border: 1px solid #e0e0e0; border-radius: 10px;
@@ -436,7 +425,7 @@
       top: 16px;
       z-index: 30;
     }
-    header span {
+    .brand-wrap > {
       width: 46px;
       height: 46px;
       display: inline-flex !important;
@@ -517,30 +506,75 @@
     .tabs {
       position: relative;
       display: flex;
-      gap: 6px !important;
-      margin: 0 !important;
-      padding: 8px !important;
-      border: 1px solid rgba(255,255,255,0.72) !important;
-      border-radius: 999px !important;
-      background: rgba(255,255,255,0.74) !important;
-      box-shadow: var(--card-shadow);
+      gap: 16px;
+      padding: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.74);
       backdrop-filter: blur(18px);
       overflow-x: auto;
       min-height: 56px;
+      align-items: center;
     }
+
+    #tabIndicator {
+      position: absolute;
+      top: 8px;
+      bottom: 8px;
+      border-radius: 999px;
+      background: linear-gradient(
+        135deg,
+        rgba(124,58,237,0.14),
+        rgba(59,130,246,0.14)
+      );
+      transition: left 240ms ease, width 240ms ease;
+      pointer-events: none;
+      z-index: 0;
+    }
+
     .tab-btn {
       position: relative;
-      border-radius: 999px !important;
-      padding: 12px 18px !important;
-      border: none !important;
-      color: #64748b !important;
-      transition: transform 0.18s ease, color 0.18s ease, background 0.18s ease !important;
-      white-space: nowrap;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
       z-index: 1;
     }
+
+    .tab-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+
+      padding: 10px 18px;
+      height: 40px;
+
+      border: none;
+      background: transparent;
+      border-radius: 999px;
+
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: #6b7280;
+
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex: 0 0 auto;
+    }
+
+    .tab-btn i,
+    .tab-btn svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .tab-btn:hover:not(.active) {
+      transform: translateY(-1px);
+      color: #0f172a;
+    }
+
+    .tab-btn.active {
+      color: #0f172a;
+    }
+
     .tab-btn:hover:not(.active) { transform: translateY(-1px); color: #0f172a !important; }
     .tab-btn.active {
       color: #0f172a !important;
@@ -551,11 +585,9 @@
       position: absolute;
       top: 8px;
       bottom: 8px;
-      left: 8px;
-      width: 0;
       border-radius: 999px;
       background: linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(59,130,246,0.14) 100%);
-      transition: transform 240ms ease, width 240ms ease;
+      transition: left 240ms ease, width 240ms ease;
       pointer-events: none;
     }
 
@@ -809,6 +841,14 @@
     }
   </style>
 </head>
+<script>
+  lucide.createIcons();
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    lucide.createIcons();
+  });
+</script>
 <body>
 
 <header class="app-shell">
@@ -822,19 +862,19 @@
     </div>
     <nav class="tabs" aria-label="Primary">
       <div id="tabIndicator"></div>
-      <button class="tab-btn active" data-tab="pdf" aria-label="PDF study plan">
+      <button class="tab-btn active" style="flex:0 0 auto;" data-tab="pdf" aria-label="PDF study plan">
         <i data-lucide="file-stack"></i><span>Study Plan</span>
       </button>
-      <button class="tab-btn" data-tab="chat" aria-label="Tutor chat">
+      <button class="tab-btn" style="flex:0 0 auto;" data-tab="chat" aria-label="Tutor chat">
         <i data-lucide="messages-square"></i><span>Tutor Chat</span>
       </button>
-      <button class="tab-btn" data-tab="mastery" aria-label="Concept mastery">
+      <button class="tab-btn" style="flex:0 0 auto;" data-tab="mastery" aria-label="Concept mastery">
         <i data-lucide="bar-chart-3"></i><span>Mastery</span>
       </button>
-      <button class="tab-btn" data-tab="graph" aria-label="Knowledge graph">
+      <button class="tab-btn" style="flex:0 0 auto;" data-tab="graph" aria-label="Knowledge graph">
         <i data-lucide="network"></i><span>Knowledge Graph</span>
       </button>
-      <button class="tab-btn" data-tab="profile" aria-label="Profile and groups">
+      <button class="tab-btn" style="flex:0 0 auto;" data-tab="profile" aria-label="Profile and groups">
         <i data-lucide="user-round"></i><span>My Profile</span>
       </button>
     </nav>
@@ -1010,21 +1050,21 @@
         <div class="outcome-row">
             <label for="outcomeSelect">After each reply, I felt:</label>
             <select id="outcomeSelect">
-              <option value="">â€” auto-detect â€”</option>
-              <option value="correct">âœ… I got it (correct)</option>
-              <option value="partial">ðŸŸ¡ Kind of understood (partial)</option>
-              <option value="confused">ðŸ˜• Still confused</option>
-              <option value="incorrect">âŒ I was wrong (incorrect)</option>
+              <option value=""> auto-detect </option>
+              <option value="correct"> I got it (correct)</option>
+              <option value="partial"> Kind of understood (partial)</option>
+              <option value="confused"> Still confused</option>
+              <option value="incorrect"> I was wrong (incorrect)</option>
             </select>
-            <button id="quizOpenBtn" onclick="openQuiz()" style="margin-left:auto;padding:5px 13px;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0;border-radius:6px;font-size:0.82rem;cursor:pointer;font-weight:600">ðŸ“ Quiz Me</button>
+            <button id="quizOpenBtn" onclick="openQuiz()" style="margin-left:auto;padding:5px 13px;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0;border-radius:6px;font-size:0.82rem;cursor:pointer;font-weight:600"> Quiz Me</button>
           </div>
 
           <!-- chat window -->
           <div id="chatWindow">
             <div class="msg" id="welcomeMsg">
-              <div class="avatar">ðŸ¤–</div>
+              <div class="avatar"></div>
               <div class="bubble">
-                <p id="welcomeText">Hi! I'm your adaptive tutor. Ask me anything â€” I'll remember what you know and adapt as we go.</p>
+                <p id="welcomeText">Hi! I'm your adaptive tutor. Ask me anything I'll remember what you know and adapt as we go.</p>
                 <p style="font-size:0.8rem;color:#aaa;margin-top:4px">Your learner profile is created automatically on your first message.</p>
               </div>
             </div>
@@ -1040,7 +1080,7 @@
 
       <!-- memory sidebar -->
       <div id="memorySidebar">
-        <h3>ðŸ§  Memory</h3>
+        <h3> Memory</h3>
 
         <div class="mem-section">
           <div class="mem-label" style="display:flex;align-items:center;justify-content:space-between">
@@ -1066,12 +1106,12 @@
     </div><!-- /chatLayout -->
   </div><!-- /tab-chat -->
 
-  <!-- â”€â”€ Knowledge Graph tab â”€â”€ -->
+  <!--  Knowledge Graph tab  -->
   <div class="tab-panel" id="tab-graph">
     <div class="card">
-      <h2>ðŸ§  Knowledge Graph</h2>
+      <h2> Knowledge Graph</h2>
       <p style="color:#777;font-size:0.87rem;margin-bottom:12px">
-        Your understanding as a live network. Each node is a concept â€” coloured by mastery.
+        Your understanding as a live network. Each node is a concept coloured by mastery.
         Edges connect concepts explored together. Red borders mark known misconceptions.
         Drag nodes to rearrange, scroll to zoom.
       </p>
@@ -1097,16 +1137,15 @@
   <div class="tab-panel" id="tab-mastery">
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
-        <h2 style="margin:0">ðŸ“Š Concept Mastery</h2>
+        <h2 style="margin:0"> Concept Mastery</h2>
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
           <span id="masteryStats" style="font-size:0.83rem;color:#888"></span>
-          <button onclick="openQuiz()" style="padding:6px 14px;background:#4f46e5;color:#fff;border:none;border-radius:7px;font-size:0.83rem;cursor:pointer;font-weight:600">ðŸ“ Quiz Me</button>
+          <button onclick="openQuiz()" style="padding:6px 14px;background:#4f46e5;color:#fff;border:none;border-radius:7px;font-size:0.83rem;cursor:pointer;font-weight:600"> Quiz Me</button>
         </div>
       </div>
       <div id="masteryContextLabel" style="display:none;font-size:0.8rem;color:#4338ca;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;padding:5px 10px;margin-bottom:12px"></div>
 
       <div id="masteryEmpty" style="text-align:center;padding:56px 24px;color:#aaa">
-        <div style="font-size:2.5rem">ðŸ“š</div>
         <p style="margin-top:10px">Upload a PDF or start chatting to see your concept mastery here.</p>
         <p style="margin-top:6px;font-size:0.82rem">Each concept from the study plan starts at 0 % and updates as you chat or take quizzes.</p>
       </div>
@@ -1138,13 +1177,13 @@
   <div class="tab-panel" id="tab-profile">
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
-        <h2 style="margin:0">ðŸ‘¤ My Profile</h2>
+        <h2 style="margin:0"> My Profile</h2>
         <code id="profileUserBadge" style="font-size:0.75rem;color:#9ca3af;background:#f1f5f9;padding:3px 8px;border-radius:5px"></code>
       </div>
 
       <!-- Create group form -->
       <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;align-items:center">
-        <input id="newGroupName" placeholder="New group nameâ€¦"
+        <input id="newGroupName" placeholder="New group name"
           style="flex:1;min-width:180px;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:0.88rem" />
         <button onclick="createGroup()"
           style="padding:9px 20px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:0.88rem;cursor:pointer;font-weight:600;white-space:nowrap">+ Create Group</button>
@@ -1152,7 +1191,6 @@
       <div id="profileCreateStatus" style="font-size:0.82rem;margin-top:-16px;margin-bottom:14px;min-height:16px"></div>
 
       <div id="profileGroupsEmpty" style="text-align:center;padding:48px 24px;color:#aaa">
-        <div style="font-size:2.4rem">ðŸ“</div>
         <p style="margin-top:10px">No groups yet.<br>Create one above, then upload PDFs into it.</p>
       </div>
   <div id="profileGroupsList"></div>
@@ -1167,7 +1205,7 @@
     <!-- Setup view -->
     <div id="quizSetup">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <span style="font-weight:700;font-size:1.05rem;color:#1f2937">ðŸ“ Quiz Generator</span>
+        <span style="font-weight:700;font-size:1.05rem;color:#1f2937"> Quiz Generator</span>
         <button id="quizCloseBtn" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:1.25rem;line-height:1" title="Close">âœ•</button>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -1225,23 +1263,16 @@
 
   function moveTabIndicator(activeBtn, immediate = false) {
     if (!tabIndicator || !activeBtn) return;
-    const left = activeBtn.offsetLeft;
+
+    const container = activeBtn.parentElement;
+    const containerStyles = getComputedStyle(container);
+    const paddingLeft = parseFloat(containerStyles.paddingLeft);
+
+    const left = activeBtn.offsetLeft - paddingLeft;
     const width = activeBtn.offsetWidth;
-    if (immediate) {
-      tabIndicator.style.transform = `translateX(${left}px)`;
-      tabIndicator.style.width = `${width}px`;
-      return;
-    }
-    animateWithMotion(
-      ({ animate }) => animate(tabIndicator, {
-        transform: `translateX(${left}px)`,
-        width: `${width}px`,
-      }, { duration: 0.28, easing: [0.22, 1, 0.36, 1] }),
-      () => {
-        tabIndicator.style.transform = `translateX(${left}px)`;
-        tabIndicator.style.width = `${width}px`;
-      },
-    );
+
+    tabIndicator.style.left = left + "px";
+    tabIndicator.style.width = width + "px";
   }
 
   function setActiveTab(tabName, options = {}) {
@@ -1456,10 +1487,10 @@
     document.getElementById("pdfBannerName").textContent = name;
     const statusEl = document.getElementById("smStatus");
     if (smUploaded) {
-      statusEl.textContent = "ðŸ” Supermemory indexed";
+      statusEl.textContent = " Supermemory indexed";
       statusEl.style.cssText = "background:#e8f5e9;color:#2e7d32;padding:2px 7px;border-radius:4px;font-weight:600";
     } else {
-      statusEl.textContent = "âš ï¸ Local search only";
+      statusEl.textContent = " Local search only";
       statusEl.style.cssText = "background:#fff8e1;color:#7a5a00;padding:2px 7px;border-radius:4px;font-weight:600";
     }
     banner.style.display = "flex";
@@ -1593,7 +1624,7 @@
     } else {
       bubble.textContent = text;
     }
-    // Optional badge (e.g. "ðŸ” Supermemory grounded")
+    // Optional badge (e.g. " Supermemory grounded")
     if (badge) {
       const badgeEl = document.createElement("span");
       badgeEl.className = "sm-badge";
@@ -1715,14 +1746,14 @@
       removeTyping();
 
       if (!res.ok || data.error) {
-        appendBubble("assistant", "âš ï¸ Error: " + (data.error || res.statusText));
+        appendBubble("assistant", " Error: " + (data.error || res.statusText));
         return;
       }
 
       // Warn if PDF context was lost (e.g. server restarted)
       if (currentDocId && data.doc_found === false) {
         appendBubble("system",
-          "âš ï¸ The server no longer has this PDF in memory (it may have restarted). " +
+          "The server no longer has this PDF in memory (it may have restarted). " +
           "Please re-upload the PDF to resume grounded tutoring.");
         clearPdfContext();
       }
@@ -1736,12 +1767,12 @@
       // (if in a session, learnerId + display were already set by _applySession)
 
       // Show semantic-grounding badge on the bubble if Supermemory was used
-      appendBubble("assistant", data.assistant, data.sm_grounded ? "ðŸ” Supermemory grounded" : null);
+      appendBubble("assistant", data.assistant, data.sm_grounded ? "Supermemory grounded" : null);
       updateMemory(data.memory_preview);
 
     } catch (err) {
       removeTyping();
-      appendBubble("assistant", "âš ï¸ Network error: " + err.message);
+      appendBubble("assistant", "Network error: " + err.message);
     } finally {
       sendBtn.disabled = false;
       msgBox.focus();
