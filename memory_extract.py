@@ -213,28 +213,40 @@ def extract_turn_insights(
     tutor_message: str,
     profile_context: str = "",
     outcome_signal: str | None = None,
+    allowed_concept_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """
     Call the LLM to extract structured learning signals from one turn.
 
     Parameters
     ----------
-    user_message      : the learner's raw message
-    tutor_message     : the tutor's response
-    profile_context   : compact string summarising learner state (injected as context)
-    outcome_signal    : if the caller already knows the outcome, pass it here
-                        (sets inferred=False and skips outcome signals in prompt)
+    user_message         : the learner's raw message
+    tutor_message        : the tutor's response
+    profile_context      : compact string summarising learner state (injected as context)
+    outcome_signal       : if the caller already knows the outcome, pass it here
+                           (sets inferred=False and skips outcome signals in prompt)
+    allowed_concept_ids  : when provided, the LLM MUST choose concept_ids only from
+                           this list; prevents invented IDs drifting from PDF slugs.
 
     Returns a validated dict; falls back to heuristics on LLM/parse failure.
     """
     client = OpenAI()
+
+    # Build concept constraint clause
+    concept_constraint = ""
+    if allowed_concept_ids:
+        cid_list = ", ".join(allowed_concept_ids[:60])  # cap to avoid huge prompts
+        concept_constraint = (
+            f"\nIMPORTANT: The only valid concept_id values are:\n  {cid_list}\n"
+            "Choose concept_ids ONLY from this list. Do not invent new ones.\n"
+        )
 
     # Build user prompt
     outcome_hint = (
         f"\nNote: the explicit outcome signal from the learner is '{outcome_signal}'.\n"
         if outcome_signal else ""
     )
-    user_prompt = f"""{outcome_hint}
+    user_prompt = f"""{outcome_hint}{concept_constraint}
 LEARNER CONTEXT (use this to recognise concept names):
 {profile_context or "(no prior context)"}
 

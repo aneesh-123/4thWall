@@ -1,0 +1,22 @@
+:root{
+  --bg-fallback: #f8fafc;
+}
+/* Glass card token */
+.glass-card{background:rgba(255,255,255,0.72);border:1px solid rgba(255,255,255,0.72);border-radius:20px;box-shadow:0 20px 48px -28px rgba(59,130,246,0.18);backdrop-filter:blur(12px)}
+.dropzone{border:1px dashed rgba(59,130,246,0.12);transition:all .18s ease}
+.dropzone:focus{outline:none;box-shadow:0 6px 18px rgba(59,130,246,0.06);transform:translateY(-2px)}
+.dropzone.drag-over{border-color:rgba(124,58,237,0.36);background:linear-gradient(180deg, rgba(243,239,255,0.8), rgba(235,244,255,0.76));box-shadow:0 18px 42px -24px rgba(124,58,237,0.22)}
+.gradient-btn{background:linear-gradient(135deg,#7c3aed 0%,#3b82f6 100%);color:#fff;padding:.6rem .9rem;border-radius:14px;font-weight:700;box-shadow:0 18px 34px -20px rgba(124,58,237,0.18);transition:transform .12s ease,box-shadow .12s ease}
+.gradient-btn:disabled{opacity:.5;cursor:not-allowed}
+.gradient-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 28px 48px -28px rgba(59,130,246,0.18)}
+.btn-secondary{background:rgba(255,255,255,0.9);border:1px solid rgba(221,214,255,0.6);padding:.45rem .6rem;border-radius:10px;font-weight:600}
+.btn-ghost{background:transparent;border:1px solid rgba(0,0,0,0.04);padding:.45rem .6rem;border-radius:10px}
+.stat-card{min-width:82px;padding:.5rem .75rem;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.5));border:1px solid rgba(255,255,255,0.6)}
+.animate-spin-slow{animation:spin 1.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* prose improvements */
+.prose h1,.prose h2,.prose h3{color:#0f172a}
+
+/* small responsive tweaks */
+@media (max-width:1024px){.glass-card{border-radius:16px}}
