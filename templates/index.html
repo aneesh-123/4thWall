@@ -1347,8 +1347,7 @@
     const form = new FormData();
     form.append("pdf", selectedFile);
     try {
-      const res  = await fetch("/api/extract", { method: "POST", body: form });
-      const data = await res.json();
+      const { res, data } = await fetchJson("/api/extract", { method: "POST", body: form });
       if (!res.ok || data.error) { showError(data.error || "An unexpected error occurred."); return; }
       showResults(data);
       // Link to chat
@@ -1562,8 +1561,7 @@
   createSessionBtn.addEventListener("click", async () => {
     createSessionBtn.disabled = true;
     try {
-      const res  = await fetch("/api/session/create", { method: "POST" });
-      const data = await res.json();
+      const { res, data } = await fetchJson("/api/session/create", { method: "POST" });
       if (data.error) { alert(data.error); return; }
       _applySession(data.code, data.learner_id);
       // auto-switch to chat tab
@@ -1580,8 +1578,7 @@
     if (!code) { joinCodeInput.focus(); return; }
     joinSessionBtn.disabled = true;
     try {
-      const res  = await fetch("/api/session/join/" + code);
-      const data = await res.json();
+      const { res, data } = await fetchJson("/api/session/join/" + code);
       if (!res.ok || data.error) { alert(data.error || "Session not found."); return; }
       _applySession(data.code, data.learner_id);
       joinCodeInput.value = "";
@@ -1737,12 +1734,11 @@
     outcomeSelect.value = "";
 
     try {
-      const res  = await fetch("/chat/turn", {
+      const { res, data } = await fetchJson("/chat/turn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
       removeTyping();
 
       if (!res.ok || data.error) {
@@ -1988,7 +1984,7 @@
     status.textContent = "";
 
     try {
-      const res  = await fetch("/api/quiz/generate", {
+      const { res, data } = await fetchJson("/api/quiz/generate", {
         method:  "POST",
         headers: {"Content-Type": "application/json"},
         body:    JSON.stringify({
@@ -1998,7 +1994,6 @@
           n_questions: n
         }),
       });
-      const data = await res.json();
       if (!res.ok || data.error) {
         status.textContent = "âš ï¸ " + (data.error || "Failed to generate quiz.");
         status.style.color = "#ef4444";
@@ -2071,12 +2066,11 @@
     submitBtn.textContent = "Submittingâ€¦";
 
     try {
-      const res  = await fetch("/api/quiz/submit", {
+      const { res, data } = await fetchJson("/api/quiz/submit", {
         method:  "POST",
         headers: {"Content-Type": "application/json"},
         body:    JSON.stringify({ learner_id: learnerId, answers, allowed_concept_ids: _quizAllowedConcepts, group_id: activeGroupId || null }),
       });
-      const data = await res.json();
       if (!res.ok || data.error) { alert(data.error || "Submission failed."); return; }
 
       // Reveal per-question feedback inline
